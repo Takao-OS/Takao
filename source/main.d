@@ -10,6 +10,7 @@ import memory.virtual;
 import lib.debugging;
 import lib.gc;
 import scheduler.thread;
+import services.kmessage;
 import services.wm;
 
 extern (C) void main(Stivale* stivale) {
@@ -28,7 +29,8 @@ extern (C) void main(Stivale* stivale) {
     as.setActive();
 
     writeln("Spawning services");
-    spawnThread(&wmService, &stivale.framebuffer);
+    spawnThread(&kmessageService, null);
+    spawnThread(&wmService,       &stivale.framebuffer);
     asm { sti; }
 
     for (;;) asm { hlt; }

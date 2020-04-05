@@ -69,7 +69,7 @@ MessageQueue!(T)* getMessageQueue(T)(string queueName) {
     foreach (int i; 0..registeredQueues.length) {
         if (registeredQueues[i] != null) {
             MessageQueue!(T)* ret = cast(MessageQueue!(T)*)registeredQueues[i];
-            if (ret.queueName == queueName) {
+            if (ret.name == queueName) {
                 return ret;
             }
         }
