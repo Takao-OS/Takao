@@ -1,8 +1,8 @@
-module wm.desktop;
+module services.wm.desktop;
 
-import lib.gc;
 import services.wm.framebuffer;
-import stivale;
+import lib.gc;
+import lib.stivale;
 
 private immutable PANEL_COLOUR      = 0xFFFFFF;
 private immutable BACKGROUND_COLOUR = 0x008080;

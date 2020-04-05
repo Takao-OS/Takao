@@ -2,15 +2,16 @@ module lib.debugging;
 
 import core.stdc.stdarg;
 import system.intrinsics;
-import lib.cstring;
-import lib.spinlock;
+import lib.lock;
+
+public alias cstring = immutable(char)*;
 
 private immutable CONVERSION_TABLE = "0123456789ABCDEF";
 private immutable cstring CRED     = "\033[31m";
 private immutable cstring CCYAN    = "\033[36m";
 private immutable cstring CRESET   = "\033[0m";
 
-private __gshared Spinlock lock;
+private __gshared Lock lock;
 
 private void print(char c) {
     outb(0xE9, c);

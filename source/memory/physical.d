@@ -1,16 +1,16 @@
 module memory.physical;
 
-import stivale;
+import lib.stivale;
 import memory.virtual;
-import lib.spinlock;
+import lib.lock;
 
 immutable PAGE_SIZE  = 0x1000;    // 4 KiB.
 immutable ALLOC_BASE = 0x1000000; // 16 MiB.
 
-private __gshared size_t   totalPages;
-private __gshared size_t   stackSize;
-private __gshared size_t*  stack;
-private __gshared Spinlock lock;
+private __gshared size_t  totalPages;
+private __gshared size_t  stackSize;
+private __gshared size_t* stack;
+private __gshared Lock    lock;
 
 void initPhysicalAllocator(StivaleMemmap memmap) {
     // Set the offsets we will use for the stack.

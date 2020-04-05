@@ -2,7 +2,7 @@ module lib.gc;
 
 import memory.physical;
 import memory.virtual;
-import glue;
+import lib.glue;
 
 T* newObj(T)(T request) {
     auto size = request.sizeof;

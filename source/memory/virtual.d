@@ -2,8 +2,8 @@ module memory.virtual;
 
 import system.intrinsics;
 import memory.physical;
-import lib.spinlock;
-import stivale;
+import lib.lock;
+import lib.stivale;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
 immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000; 
@@ -12,8 +12,8 @@ private immutable PT_PRESENT = 1 << 0;
 private immutable PT_ENTRIES = 512;
 
 struct AddressSpace {
-    private Spinlock lock;
-    private size_t*  pml4;
+    private Lock    lock;
+    private size_t* pml4;
 
     this(StivaleMemmap memmap) {
         this.pml4 = cast(size_t*)(allocPageAndZero() + MEM_PHYS_OFFSET);

@@ -4,7 +4,7 @@ import system.gdt;
 import system.intrinsics;
 import memory.physical;
 import memory.virtual;
-import lib.spinlock;
+import lib.lock;
 
 struct Thread {
     bool      present;
@@ -12,7 +12,7 @@ struct Thread {
     Registers regs;
 }
 
-private __gshared Spinlock    lock;
+private __gshared Lock        lock;
 private __gshared int         currentThread = -1;
 private __gshared Thread*[32] runningQueue;
 private __gshared Thread*[32] idleQueue;

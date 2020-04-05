@@ -1,9 +1,8 @@
-module wm.framebuffer;
+module services.wm.framebuffer;
 
 import memory.virtual;
 import lib.gc;
-import stivale;
-import glue;
+import lib.stivale;
 
 alias Colour = uint;
  

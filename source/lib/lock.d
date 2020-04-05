@@ -1,11 +1,11 @@
-module lib.spinlock;
+module lib.lock;
 
 import core.atomic;
 
 private immutable ubyte SPINLOCK_LOCKED   = 1;
 private immutable ubyte SPINLOCK_UNLOCKED = 0;
 
-struct Spinlock {
+struct Lock {
     private shared ubyte status;
 
     void acquire() {

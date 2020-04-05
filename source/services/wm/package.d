@@ -1,6 +1,6 @@
 module services.wm;
 
-import stivale;
+import lib.stivale;
 import lib.gc;
 import services.wm.desktop;
 
