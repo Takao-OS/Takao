@@ -1,0 +1,19 @@
+module cpu.pit;
+
+import system.intrinsics;
+
+private immutable ushort pitFrequency = 1000;
+
+void initPIT() {
+    uint divisor = 1193180 / pitFrequency;
+
+    outb(0x43, 0x36);
+
+    ubyte l = cast(ubyte)(divisor & 0xFF);
+    ubyte h = cast(ubyte)((divisor >> 8) & 0xFF);
+
+    outb(0x40, l);
+    wait();
+    outb(0x40, h);
+    wait();
+}
