@@ -1,3 +1,5 @@
 /**/*.o
 /**/*.elf
 /**/*.hdd
+qloader2_toolchain
+build/qloader2
