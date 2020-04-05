@@ -83,7 +83,7 @@ void pitHandler() {
         mov DX, MASTERPIC_COMMAND;
         mov AL, PIC_EOI;
         out DX, AL;
-        call schedulerTick;
+        call reschedule;
 
         pop R15;
         pop R14;

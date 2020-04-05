@@ -9,16 +9,17 @@ import lib.lock;
 struct Thread {
     bool      present;
     int       id;
+    bool      isRunning;
+    int       runningQueueIndex;
     Registers regs;
 }
 
 private __gshared Lock        lock;
-private __gshared int         currentThread = -1;
+__gshared         int         currentThread = -1;
 private __gshared Thread*[32] runningQueue;
-private __gshared Thread*[32] idleQueue;
 private __gshared Thread[64]  threadPool;
 
-extern (C) void schedulerTick(Registers* regs) {
+extern (C) void reschedule(Registers* regs) {
     if (!lock.acquireOrFail()) {
         return;
     }
@@ -26,7 +27,7 @@ extern (C) void schedulerTick(Registers* regs) {
     if (currentThread != -1) {
         threadPool[currentThread].regs = *regs;
     }
-    
+
     currentThread = getNextThread(currentThread);
 
     if (currentThread == -1) {
@@ -61,6 +62,61 @@ private extern(C) void loadThread(Registers* regs) {
         pop RBX;
         pop RAX;
         iretq;
+    }
+}
+
+void dequeueAndYield() {
+    lock.acquire();
+
+    // We don't wanna be interrupted
+    asm { cli; }
+
+    int runningQueueIndex = threadPool[currentThread].runningQueueIndex;
+    runningQueue[runningQueueIndex] = null;
+
+    threadPool[currentThread].isRunning = false;
+
+    lock.release();
+
+    yield();
+}
+
+extern(C) void yield() {
+    asm {
+        naked;
+
+        cli;
+
+        mov RAX, RSP;
+        push DATA_SEGMENT;
+        push RAX;
+        push 0x202;
+        push CODE_SEGMENT;
+        lea RAX, L2;
+        push RAX;
+        push RAX;
+        push RBX;
+        push RCX;
+        push RDX;
+        push RSI;
+        push RDI;
+        push RBP;
+        push R8;
+        push R9;
+        push R10;
+        push R11;
+        push R12;
+        push R13;
+        push R14;
+        push R15;
+
+    L1:
+        mov RDI, RSP;
+        call reschedule;
+        jmp L1;
+
+    L2:
+        ret;
     }
 }
 
@@ -109,11 +165,19 @@ private int getFreeThread() {
     return -1;
 }
 
-private void queueThread(int thread) {
+int queueThread(int thread) {
+    if (threadPool[thread].isRunning) {
+        return 0;
+    }
+
     foreach (int i; 0..runningQueue.length) {
         if (runningQueue[i] == null) {
             runningQueue[i] = &threadPool[thread];
-            return;
+            threadPool[thread].runningQueueIndex = i;
+            threadPool[thread].isRunning         = true;
+            return 0;
         }
     }
+
+    return -1;
 }
