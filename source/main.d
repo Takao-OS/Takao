@@ -12,7 +12,7 @@ import lib.gc;
 import scheduler.thread;
 import services.wm;
 
-extern(C) void main(Stivale* stivale) {
+extern (C) void main(Stivale* stivale) {
     writeln("Hai~ <3. Doing some preparatives");
     stivale = cast(Stivale*)(cast(size_t)stivale + MEM_PHYS_OFFSET);
 

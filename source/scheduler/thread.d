@@ -41,7 +41,7 @@ extern (C) void reschedule(Registers* regs) {
     loadThread(&(threadPool[currentThread].regs));
 }
 
-private extern(C) void loadThread(Registers* regs) {
+private extern (C) void loadThread(Registers* regs) {
     asm {
         naked;
 
@@ -81,7 +81,7 @@ void dequeueAndYield() {
     yield();
 }
 
-extern(C) void yield() {
+extern (C) void yield() {
     asm {
         naked;
 

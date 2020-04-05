@@ -2,35 +2,36 @@ module lib.bus;
 
 import lib.lock;
 import scheduler.thread;
+import lib.debugging;
 
 struct MessageQueue(T) {
-    string   queueName;
-    Lock     queueLock;
-    int      queueThreadId;
-    int      queueIndex;
-    T[256]   queue;
+    private string name;
+    private Lock   lock;
+    private int    threadId;
+    private int    queueIndex;
+    private T[256] queue;
 
     this(string name) {
         foreach (int i; 0..registeredQueues.length) {
             if (registeredQueues[i] == null) {
                 registeredQueues[i] = cast(void*)&this;
-                queueName     = name;
-                queueThreadId = currentThread;
+                this.name     = name;
+                this.threadId = currentThread;
                 return;
             }
         }
-        // TODO tidy this up
-        for (;;) {}
+
+        panic("Cannot register queue \"%s\"", cast(char*)name);
     }
 
     T receiveMessage() {
-        queueLock.acquire();
+        this.lock.acquire();
 
         while (queueIndex == 0) {
             // There are no messages to read, yield.
-            queueLock.release();
+            this.lock.release();
             dequeueAndYield();
-            queueLock.acquire();
+            this.lock.acquire();
         }
 
         T ret = queue[0];
@@ -40,23 +41,23 @@ struct MessageQueue(T) {
             queue[i] = queue[i+1];
         }
 
-        queueLock.release();
+        this.lock.release();
         return ret;
     }
 
     int sendMessage(T)(T message) {
-        queueLock.acquire();
+        this.lock.acquire();
 
         if (queueIndex == queue.length) {
-            queueLock.release();
+            this.lock.release();
             return -1;
         }
 
         queue[queueIndex++] = message;
 
-        queueThread(queueThreadId);
+        queueThread(this.threadId);
 
-        queueLock.release();
+        this.lock.release();
         return 0;
     }
 }
