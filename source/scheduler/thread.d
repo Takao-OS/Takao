@@ -149,9 +149,10 @@ int spawnThread(T)(void* entry, T arg) {
     thread.present     = true;
     thread.id          = id;
 
+    lock.release();
+
     queueThread(id);
 
-    lock.release();
     return id;
 }
 
@@ -166,7 +167,10 @@ private int getFreeThread() {
 }
 
 int queueThread(int thread) {
+    lock.acquire();
+
     if (threadPool[thread].isRunning) {
+        lock.release();
         return 0;
     }
 
@@ -175,9 +179,11 @@ int queueThread(int thread) {
             runningQueue[i] = &threadPool[thread];
             threadPool[thread].runningQueueIndex = i;
             threadPool[thread].isRunning         = true;
+            lock.release();
             return 0;
         }
     }
 
+    lock.release();
     return -1;
 }
