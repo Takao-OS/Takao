@@ -6,7 +6,7 @@ import lib.lock;
 import lib.stivale;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
-immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000; 
+immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000;
 
 private immutable PT_PRESENT = 1 << 0;
 private immutable PT_ENTRIES = 512;
@@ -16,16 +16,16 @@ struct AddressSpace {
     private size_t* pml4;
 
     this(StivaleMemmap memmap) {
-        this.pml4 = cast(size_t*)(allocPageAndZero() + MEM_PHYS_OFFSET);
+        this.pml4 = cast(size_t*)(pmmAllocAndZero(1) + MEM_PHYS_OFFSET);
 
-        // Map anything from 0 to 4 GiB starting from MEM_PHYS_OFFSET. 
+        // Map anything from 0 to 4 GiB starting from MEM_PHYS_OFFSET.
         for (size_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
             this.mapPage(i, MEM_PHYS_OFFSET + i, 0x03);
         }
 
         for (size_t i = 0; i < 0x80000000; i += PAGE_SIZE) {
             this.mapPage(i, KERNEL_PHYS_OFFSET + i, 0x03);
-        }  
+        }
 
         // Map according to the memmap.
         for (auto i = 0; i < memmap.entries; i++) {
@@ -114,7 +114,7 @@ struct AddressSpace {
     private void cleanTable(size_t* table) {
         for (size_t i = 0;; i++) {
             if (i == PT_ENTRIES) {
-                freePage(cast(void*)(table) - MEM_PHYS_OFFSET);
+                pmmFree(cast(void*)(table) - MEM_PHYS_OFFSET, 1);
             } else if (table[i] & PT_PRESENT) {
                 return;
             }
@@ -134,7 +134,7 @@ struct AddressSpace {
         auto ret = findTable(parent, index);
 
         if (ret == null) {
-            ret = cast(size_t*)(allocPageAndZero() + MEM_PHYS_OFFSET);
+            ret = cast(size_t*)(pmmAllocAndZero(1) + MEM_PHYS_OFFSET);
             parent[index] = (cast(size_t)ret - MEM_PHYS_OFFSET) | 0b11;
         }
 

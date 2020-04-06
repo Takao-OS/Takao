@@ -140,7 +140,7 @@ int spawnThread(T)(void* entry, T arg) {
     auto id     = getFreeThread();
     auto thread = &threadPool[id];
 
-    thread.regs.rsp    = cast(size_t)(allocPageAndZero() + PAGE_SIZE + MEM_PHYS_OFFSET);
+    thread.regs.rsp    = cast(size_t)(pmmAllocAndZero(1) + PAGE_SIZE + MEM_PHYS_OFFSET);
     thread.regs.rip    = cast(size_t)entry;
     thread.regs.rdi    = cast(size_t)arg;
     thread.regs.cs     = CODE_SEGMENT;

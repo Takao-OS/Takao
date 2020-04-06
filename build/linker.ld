@@ -24,6 +24,8 @@ SECTIONS {
     .bss : ALIGN(4K) {
         *(.bss*)
         *(COMMON)
+        . = ALIGN(4K);
+        kernelTop = .;
     }
 }
 

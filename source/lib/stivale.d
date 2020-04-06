@@ -12,6 +12,7 @@ struct StivaleMemmap {
 }
 
 enum StivaleMemmapType : uint {
+    Unusable    = 0,
     Usable      = 1,
     Reserved    = 2,
     ACPIReclaim = 3,

@@ -29,6 +29,7 @@ extern (C) void main(Stivale* stivale) {
     as.setActive();
 
     writeln("Spawning services");
+
     spawnThread(&kmessageService, null);
     spawnThread(&wmService,       &stivale.framebuffer);
     asm { sti; }
