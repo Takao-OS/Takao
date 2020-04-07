@@ -30,7 +30,7 @@ ASMSOURCE := $(shell find ${SOURCEDIR} -type f -name '*.S')
 OBJ       := $(DSOURCE:.d=.o) $(ASMSOURCE:.S=.o)
 
 # Where the fun begins!
-.PHONY: all qloader2 hdd test clean distclean
+.PHONY: all submodules hdd test clean distclean
 
 all: ${KERNEL}
 
@@ -48,7 +48,7 @@ ${KERNEL}: ${OBJ}
 
 hdd: ${IMAGE}
 
-${IMAGE}: qloader2 ${KERNEL}
+${IMAGE}: submodules ${KERNEL}
 	@dd if=/dev/zero bs=1M count=0 seek=64 of=${IMAGE}
 	@parted -s ${IMAGE} mklabel msdos
 	@parted -s ${IMAGE} mkpart primary 1 100%
@@ -57,7 +57,7 @@ ${IMAGE}: qloader2 ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} import ${BUILDDIR}/qloader2.cfg qloader2.cfg
 	@qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
 
-qloader2:
+submodules:
 	@git submodule update --init
 
 test: hdd
@@ -67,4 +67,4 @@ clean:
 	@rm -rf ${OBJ} ${KERNEL} ${IMAGE}
 
 distclean: clean
-	@rm -rf qloader2
+	@git submodule foreach sh -c 'rm -rf ..?* .[!.]* *'
