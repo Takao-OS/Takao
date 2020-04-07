@@ -8,7 +8,6 @@ import system.pit;
 import memory.physical;
 import memory.virtual;
 import lib.debugging;
-import lib.gc;
 import scheduler.thread;
 import services.kmessage;
 import services.wm;

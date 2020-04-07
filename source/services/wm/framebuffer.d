@@ -1,11 +1,10 @@
 module services.wm.framebuffer;
 
 import memory.virtual;
-import lib.gc;
 import lib.stivale;
 
 alias Colour = uint;
- 
+
 struct Framebuffer {
     private Colour* address;
     private size_t  width;

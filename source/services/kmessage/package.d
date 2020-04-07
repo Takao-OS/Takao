@@ -26,7 +26,7 @@ void kmessageService(void* unused) {
 
     while (true) {
         auto msg = queue.receiveMessage();
- 
+
         final switch (msg.priority) {
             case KMessagePriority.Log:
                 qemuPrintMsg(CCYAN);
@@ -42,7 +42,7 @@ void kmessageService(void* unused) {
         qemuPrintMsg(">> ");
         qemuPrintMsg(CRESET);
         qemuPrintMsg(msg.contents);
-        qemuPrintMsg("\n");       
+        qemuPrintMsg("\n");
     }
 }
 
