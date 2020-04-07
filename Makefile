@@ -55,15 +55,10 @@ ${IMAGE}: qloader2 ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} quick-format 32768
 	@echfs-utils -m -p0 ${IMAGE} import ${KERNEL} ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} import ${BUILDDIR}/qloader2.cfg qloader2.cfg
-	@cd ${BUILDDIR}/qloader2 && ./qloader2-install ../../${IMAGE}
+	@cd qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
 
-qloader2_toolchain:
-	@git clone https://github.com/qword-os/qloader2 ${BUILDDIR}/qloader2 || true
-	@cd ${BUILDDIR}/qloader2/toolchain && ./make_toolchain.sh ${QLOADER_TOOLCHAIN_MAKEFLAGS}
-	touch qloader2_toolchain
-
-qloader2: qloader2_toolchain
-	@${MAKE} -C ${BUILDDIR}/qloader2
+qloader2:
+	@git submodule update --init
 
 test: hdd
 	@${QEMU} ${QEMUHARDFLAGS} -hda ${IMAGE}
@@ -72,4 +67,4 @@ clean:
 	@rm -rf ${OBJ} ${KERNEL} ${IMAGE}
 
 distclean: clean
-	@rm -rf ${BUILDDIR}/qloader2 qloader2_toolchain
+	@rm -rf qloader2
