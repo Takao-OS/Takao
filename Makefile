@@ -55,7 +55,7 @@ ${IMAGE}: qloader2 ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} quick-format 32768
 	@echfs-utils -m -p0 ${IMAGE} import ${KERNEL} ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} import ${BUILDDIR}/qloader2.cfg qloader2.cfg
-	@cd qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
+	@qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
 
 qloader2:
 	@git submodule update --init
