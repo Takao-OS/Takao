@@ -26,8 +26,6 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
             continue;
         }
 
-        writeln("base/size before alignment: %x %x", memmap.address[i].base, memmap.address[i].size);
-
         auto base = alignUp(memmap.address[i].base, PAGE_SIZE);
         auto size = memmap.address[i].size - (base - memmap.address[i].base);
         size      = alignDown(size, PAGE_SIZE);
@@ -39,12 +37,9 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
                 base  = allocBase;
             } else {
                 memmap.address[i].type = StivaleMemmapType.Unusable;
-                writeln("unusable memory area.");
                 continue;
             }
         }
-
-        writeln("base/size after alignment:  %x %x", base, size);
 
         memmap.address[i].base = base;
         memmap.address[i].size = size;
@@ -54,11 +49,7 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
         }
     }
 
-    writeln("PMM: Highest page address: %x", highestPage);
-
     size_t bitmapSize = (highestPage / PAGE_SIZE) / 8;
-
-    writeln("PMM: That means the bitmap needs to be %x bytes.", bitmapSize);
 
     // Find a hole for the stupid bitmap.
     foreach (i; 0..memmap.entries) {
@@ -67,12 +58,10 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
         }
 
         if (memmap.address[i].size >= bitmapSize) {
-            writeln("PMM: Allocating the bitmap at %x", memmap.address[i].base);
             bitmap = cast(size_t*)(memmap.address[i].base + MEM_PHYS_OFFSET);
 
             memmap.address[i].size -= bitmapSize;
             memmap.address[i].base += bitmapSize;
-            writeln("base/size after alignment:  %x %x",  memmap.address[i].base,  memmap.address[i].size);
 
             // Set all bitmap to 1
             foreach (size_t j; 0..(bitmapSize / size_t.sizeof)) {

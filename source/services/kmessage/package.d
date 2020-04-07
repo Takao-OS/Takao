@@ -1,6 +1,7 @@
 module services.kmessage;
 
 import lib.bus;
+import lib.messages;
 
 immutable KMESSAGE_SERVICE_NAME = "kmessage";
 
@@ -22,7 +23,7 @@ struct KMessage {
 
 void kmessageService(void* unused) {
     auto queue = MessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
-    queue.sendMessage(KMessage(KMessagePriority.Log, "Started KMessage service"));
+    log("Started KMessage service");
 
     while (true) {
         auto msg = queue.receiveMessage();

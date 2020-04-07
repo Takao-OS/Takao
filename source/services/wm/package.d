@@ -1,16 +1,14 @@
 module services.wm;
 
+import services.wm.desktop;
 import lib.stivale;
 import lib.alloc;
-import services.wm.desktop;
 import lib.bus;
-import services.kmessage;
+import lib.messages;
 
 void wmService(StivaleFramebuffer* fb) {
-    auto kmessage = getMessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
+    log("Started WM service");
 
-    kmessage.sendMessage(KMessage(KMessagePriority.Log, "Started WM service"));
-
-    auto desktop  = newObj!(Desktop)(*fb);
+    auto desktop = newObj!(Desktop)(*fb);
     desktop.mainLoop();
 }

@@ -2,7 +2,6 @@ module lib.debugging;
 
 import core.stdc.stdarg;
 import system.intrinsics;
-import lib.lock;
 
 public alias cstring = immutable(char)*;
 
@@ -10,8 +9,6 @@ private immutable CONVERSION_TABLE = "0123456789ABCDEF";
 private immutable cstring CRED     = "\033[31m";
 private immutable cstring CCYAN    = "\033[36m";
 private immutable cstring CRESET   = "\033[0m";
-
-private __gshared Lock lock;
 
 private void print(char c) {
     outb(0xE9, c);
@@ -105,8 +102,6 @@ private extern(C) void printf(cstring message, ...) {
 }
 
 extern(C) void writeln(cstring s, ...) {
-    lock.acquire();
-
     va_list args;
     va_start(args, s);
 
@@ -115,13 +110,9 @@ extern(C) void writeln(cstring s, ...) {
     print('\n');
 
     va_end(args);
-
-    lock.release();
 }
 
 extern(C) void panic(cstring message, ...) {
-    lock.acquire();
-
     va_list args;
     va_start(args, message);
 
@@ -130,8 +121,6 @@ extern(C) void panic(cstring message, ...) {
     printf("\n[%sX%s] The system will now proceed to die\n", CRED, CRESET);
 
     va_end(args);
-
-    lock.release();
 
     while (true) {
         asm {
