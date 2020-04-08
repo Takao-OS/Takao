@@ -8,7 +8,7 @@ addons:
     packages:
     - make
     - git
-    - lld
+    - lld-8
     - clang
 
 script:
