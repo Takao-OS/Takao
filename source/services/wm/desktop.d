@@ -16,8 +16,10 @@ struct Desktop {
     }
 
     void mainLoop() {
+        this.fb.clear(BACKGROUND_COLOUR);
+
         while (true) {
-            this.fb.clear(BACKGROUND_COLOUR);
+            this.fb.refresh();
         }
     }
 

@@ -3,7 +3,6 @@ module memory.physical;
 import lib.stivale;
 import memory.virtual;
 import lib.lock;
-import lib.debugging;
 import lib.alignment;
 
 __gshared extern extern (C) void* kernelTop;
@@ -18,8 +17,6 @@ private __gshared size_t  lastUsedIndex = 0;
 
 void initPhysicalAllocator(StivaleMemmap memmap) {
     allocBase = (cast(size_t)&kernelTop) - KERNEL_PHYS_OFFSET;
-
-    writeln("PMM allocation base: %x", allocBase);
 
     foreach (i; 0..memmap.entries) {
         if (memmap.address[i].type != StivaleMemmapType.Usable) {
