@@ -9,7 +9,13 @@ struct MessageQueue(T) {
     private Lock   lock;
     private int    threadId;
     private int    queueIndex;
-    private T[256] queue;
+
+    struct QueueElem {
+        T   message;
+        int senderThread;
+    }
+
+    private QueueElem[256] queue;
 
     this(string name) {
         foreach (int i; 0..registeredQueues.length) {
@@ -24,7 +30,7 @@ struct MessageQueue(T) {
         panic("Cannot register queue \"%s\"", cast(char*)name);
     }
 
-    T receiveMessage() {
+    QueueElem receiveMessage() {
         this.lock.acquire();
 
         while (queueIndex == 0) {
@@ -34,7 +40,7 @@ struct MessageQueue(T) {
             this.lock.acquire();
         }
 
-        T ret = queue[0];
+        auto ret = queue[0];
 
         queueIndex--;
         foreach (int i; 0..queueIndex) {
@@ -45,19 +51,47 @@ struct MessageQueue(T) {
         return ret;
     }
 
-    int sendMessage(T)(T message) {
-        this.lock.acquire();
+    void messageProcessed(QueueElem elem) {
+        if (elem.senderThread != -1) {
+            queueThreadOrWait(elem.senderThread);
+        }
+    }
 
+    private int queueMessage(T)(T message, int senderThread) {
         if (queueIndex == queue.length) {
-            this.lock.release();
             return -1;
         }
 
-        queue[queueIndex++] = message;
+        queue[queueIndex].message      = message;
+        queue[queueIndex].senderThread = senderThread;
+
+        queueIndex++;
 
         queueThread(this.threadId);
+        return 0;
+    }
+
+    int sendMessageAsync(T)(T message) {
+        this.lock.acquire();
+
+        auto ret = queueMessage(message, -1);
 
         this.lock.release();
+        return ret;
+    }
+
+    int sendMessageSync(T)(T message) {
+        this.lock.acquire();
+
+        auto ret = queueMessage(message, currentThread);
+        if (ret) {
+            this.lock.release();
+            return ret;
+        }
+
+        this.lock.release();
+        dequeueAndYield();
+
         return 0;
     }
 }

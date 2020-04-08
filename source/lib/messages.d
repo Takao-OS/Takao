@@ -7,10 +7,10 @@ private void sendMessage(KMessagePriority priority, string message) {
     MessageQueue!(KMessage)* queue;
 
     while (queue == null) {
-        queue = getMessageQueue!KMessage(KMESSAGE_SERVICE_NAME);    
+        queue = getMessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
     }
 
-    queue.sendMessage(KMessage(priority, message));
+    queue.sendMessageSync(KMessage(priority, message));
 }
 
 void log(string message) {

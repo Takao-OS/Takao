@@ -5,6 +5,7 @@ import system.intrinsics;
 import memory.physical;
 import memory.virtual;
 import lib.lock;
+import lib.debugging;
 
 struct Thread {
     bool      present;
@@ -166,6 +167,34 @@ private int getFreeThread() {
     return -1;
 }
 
+private int innerQueueThread(int thread) {
+    foreach (int i; 0..runningQueue.length) {
+        if (runningQueue[i] == null) {
+            runningQueue[i] = &threadPool[thread];
+            threadPool[thread].runningQueueIndex = i;
+            threadPool[thread].isRunning         = true;
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
+int queueThreadOrWait(int thread) {
+    lock.acquire();
+
+    while (threadPool[thread].isRunning) {
+        lock.release();
+        yield();
+        lock.acquire();
+    }
+
+    auto ret = innerQueueThread(thread);
+
+    lock.release();
+    return ret;
+}
+
 int queueThread(int thread) {
     lock.acquire();
 
@@ -174,16 +203,8 @@ int queueThread(int thread) {
         return 0;
     }
 
-    foreach (int i; 0..runningQueue.length) {
-        if (runningQueue[i] == null) {
-            runningQueue[i] = &threadPool[thread];
-            threadPool[thread].runningQueueIndex = i;
-            threadPool[thread].isRunning         = true;
-            lock.release();
-            return 0;
-        }
-    }
+    auto ret = innerQueueThread(thread);
 
     lock.release();
-    return -1;
+    return ret;
 }

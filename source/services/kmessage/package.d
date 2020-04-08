@@ -23,12 +23,11 @@ struct KMessage {
 
 void kmessageService(void* unused) {
     auto queue = MessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
-    log("Started KMessage service");
 
     while (true) {
         auto msg = queue.receiveMessage();
 
-        final switch (msg.priority) {
+        final switch (msg.message.priority) {
             case KMessagePriority.Log:
                 qemuPrintMsg(CCYAN);
                 break;
@@ -42,8 +41,10 @@ void kmessageService(void* unused) {
 
         qemuPrintMsg(">> ");
         qemuPrintMsg(CRESET);
-        qemuPrintMsg(msg.contents);
+        qemuPrintMsg(msg.message.contents);
         qemuPrintMsg("\n");
+
+        queue.messageProcessed(msg);
     }
 }
 
