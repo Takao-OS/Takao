@@ -25,3 +25,35 @@ void delObj(T)(T* object) {
 
     pmmFree(ptr, size);
 }
+
+struct ArrayAllocMetadata {
+    size_t pages;
+}
+
+T* newArray(T)(size_t count) {
+    auto size      = T.sizeof * count;
+    auto pageCount = divRoundUp(size, PAGE_SIZE);
+
+    void* ptr = pmmAllocAndZero(pageCount + 1);
+
+    if (ptr == null) {
+        return null;
+    }
+
+    ptr += MEM_PHYS_OFFSET;
+
+    auto meta = cast(ArrayAllocMetadata*)ptr;
+    ptr += PAGE_SIZE;
+
+    meta.pages = pageCount;
+
+    return cast(T*)ptr;
+}
+
+void delArray(void *ptr) {
+    auto meta = cast(ArrayAllocMetadata*)ptr;
+
+    ptr -= MEM_PHYS_OFFSET;
+
+    pmmFree(ptr, meta.pages + 1);
+}
