@@ -1,0 +1,16 @@
+language: d
+
+d:
+  - ldc
+
+addons:
+  apt:
+    packages:
+    - make
+    - git
+    - lld
+    - clang
+
+script:
+  - make
+  - make hdd
