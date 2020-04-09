@@ -5,10 +5,9 @@ import scheduler.thread;
 import lib.debugging;
 
 struct MessageQueue(T) {
-    private string name;
-    private Lock   lock;
-    private int    threadId;
-    private int    queueIndex;
+    private Lock lock;
+    private int  threadId = -1;
+    private int  queueIndex;
 
     struct QueueElem {
         T   message;
@@ -17,17 +16,8 @@ struct MessageQueue(T) {
 
     private QueueElem[256] queue;
 
-    this(string name) {
-        foreach (int i; 0..registeredQueues.length) {
-            if (registeredQueues[i] == null) {
-                registeredQueues[i] = cast(void*)&this;
-                this.name     = name;
-                this.threadId = currentThread;
-                return;
-            }
-        }
-
-        panic("Cannot register queue \"%s\"", cast(char*)name);
+    void setReceiverThread(int thread) {
+        this.threadId = thread;
     }
 
     QueueElem receiveMessage() {
@@ -67,8 +57,11 @@ struct MessageQueue(T) {
 
         queueIndex++;
 
-        queueThread(this.threadId);
-        return 0;
+        if (this.threadId != -1) {
+            queueThread(this.threadId);
+        }
+
+       return 0;
     }
 
     int sendMessageAsync(T)(T message) {
@@ -94,20 +87,4 @@ struct MessageQueue(T) {
 
         return 0;
     }
-}
-
-private __gshared void*[256] registeredQueues;
-
-MessageQueue!(T)* getMessageQueue(T)(string queueName) {
-    // Tranlate a server name into its thread ID.
-    foreach (int i; 0..registeredQueues.length) {
-        if (registeredQueues[i] != null) {
-            MessageQueue!(T)* ret = cast(MessageQueue!(T)*)registeredQueues[i];
-            if (ret.name == queueName) {
-                return ret;
-            }
-        }
-    }
-
-    return null;
 }

@@ -1,9 +1,8 @@
 module services.kmessage;
 
+import scheduler.thread;
 import lib.bus;
 import lib.messages;
-
-immutable KMESSAGE_SERVICE_NAME = "kmessage";
 
 private immutable CCYAN    = "\033[36m";
 private immutable CMAGENTA = "\033[35m";
@@ -21,11 +20,15 @@ struct KMessage {
     string           contents;
 }
 
+__gshared MessageQueue!KMessage kmessageQueue;
+
 void kmessageService(void* unused) {
-    auto queue = MessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
+    kmessageQueue.setReceiverThread(currentThread);
+    kmessageQueue.sendMessageAsync(KMessage(KMessagePriority.Log,
+                                   "Started KMessage service"));
 
     while (true) {
-        auto msg = queue.receiveMessage();
+        auto msg = kmessageQueue.receiveMessage();
 
         final switch (msg.message.priority) {
             case KMessagePriority.Log:
@@ -44,7 +47,7 @@ void kmessageService(void* unused) {
         qemuPrintMsg(msg.message.contents);
         qemuPrintMsg("\n");
 
-        queue.messageProcessed(msg);
+        kmessageQueue.messageProcessed(msg);
     }
 }
 

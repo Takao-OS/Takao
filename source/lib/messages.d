@@ -1,16 +1,9 @@
 module lib.messages;
 
-import lib.bus;
 import services.kmessage;
 
 private void sendMessage(KMessagePriority priority, string message) {
-    MessageQueue!(KMessage)* queue;
-
-    while (queue == null) {
-        queue = getMessageQueue!KMessage(KMESSAGE_SERVICE_NAME);
-    }
-
-    queue.sendMessageSync(KMessage(priority, message));
+    kmessageQueue.sendMessageSync(KMessage(priority, message));
 }
 
 void log(string message) {
