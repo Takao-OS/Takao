@@ -3,6 +3,7 @@ module services.kmessage;
 import scheduler.thread;
 import lib.bus;
 import lib.messages;
+import services.terminal;
 
 private immutable CCYAN    = "\033[36m";
 private immutable CMAGENTA = "\033[35m";
@@ -32,30 +33,34 @@ void kmessageService(void* unused) {
 
         final switch (msg.message.priority) {
             case KMessagePriority.Log:
-                qemuPrintMsg(CCYAN);
+                printMessage(CCYAN);
                 break;
             case KMessagePriority.Warn:
-                qemuPrintMsg(CMAGENTA);
+                printMessage(CMAGENTA);
                 break;
             case KMessagePriority.Error:
-                qemuPrintMsg(CRED);
+                printMessage(CRED);
                 break;
         }
 
-        qemuPrintMsg(">> ");
-        qemuPrintMsg(CRESET);
-        qemuPrintMsg(msg.message.contents);
-        qemuPrintMsg("\n");
+        printMessage(">> ");
+        printMessage(CRESET);
+        printMessage(msg.message.contents);
+        printMessage("\n");
 
         kmessageQueue.messageProcessed(msg);
     }
 }
 
-private void qemuPrintMsg(string msg) {
+private void printMessage(string msg) {
     foreach (c; msg) {
+        // Qemu.
         asm {
             mov AL,   c;
             out 0xE9, AL;
         }
+
+        // Terminal.
+        terminalQueue.sendMessageSync(TerminalMessage(msg));
     }
 }

@@ -1,4 +1,4 @@
-module services.wm.framebuffer;
+module services.terminal.framebuffer;
 
 import memory.virtual;
 import lib.stivale;
@@ -9,17 +9,15 @@ alias Colour = uint;
 
 struct Framebuffer {
     private Colour* address;
-    private Colour* doubleBuffer;
     private size_t  width;
     private size_t  height;
     private size_t  pitch;
 
     this(StivaleFramebuffer fb) {
-        this.address      = cast(Colour*)(fb.address + MEM_PHYS_OFFSET);
-        this.width        = fb.width;
-        this.height       = fb.height;
-        this.pitch        = fb.pitch / Colour.sizeof;
-        this.doubleBuffer = newArray!Colour(fb.height * this.pitch);
+        this.address = cast(Colour*)(fb.address + MEM_PHYS_OFFSET);
+        this.width   = fb.width;
+        this.height  = fb.height;
+        this.pitch   = fb.pitch / Colour.sizeof;
     }
 
     invariant {
@@ -28,7 +26,7 @@ struct Framebuffer {
 
     void putPixel(size_t x, size_t y, Colour c) {
         auto position = x + this.pitch * y;
-        this.doubleBuffer[position] = c;
+        this.address[position] = c;
     }
 
     void clear(Colour c) {
@@ -37,14 +35,5 @@ struct Framebuffer {
                 this.putPixel(x, y, c);
             }
         }
-    }
-
-    void refresh() {
-        auto length = this.pitch * this.height * Colour.sizeof;
-        memcpy(this.address, this.doubleBuffer, length);
-    }
-
-    ~this() {
-        delArray(this.doubleBuffer);
     }
 }
