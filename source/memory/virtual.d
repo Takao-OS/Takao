@@ -4,12 +4,12 @@ import system.intrinsics;
 import memory.physical;
 import lib.lock;
 import lib.stivale;
+import memory.pageTable;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
 immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000;
 
 private immutable PT_PRESENT = 1 << 0;
-private immutable PT_ENTRIES = 512;
 
 struct AddressSpace {
     private Lock    lock;
@@ -72,9 +72,9 @@ struct AddressSpace {
         auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
 
         // Find or create tables.
-        size_t* pml3 = this.findOrAllocTable(this.pml4, pml4Entry);
-        size_t* pml2 = this.findOrAllocTable(pml3, pml3Entry);
-        size_t* pml1 = this.findOrAllocTable(pml2, pml2Entry);
+        size_t* pml3 = findOrAllocTable(this.pml4, pml4Entry, 0b111);
+        size_t* pml2 = findOrAllocTable(pml3, pml3Entry, 0b111);
+        size_t* pml1 = findOrAllocTable(pml2, pml2Entry, 0b111);
 
         // Set the entry as present and point it to the passed address.
         // Also set flags.
@@ -93,51 +93,21 @@ struct AddressSpace {
         auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
 
         // Find or die if we dont find them.
-        size_t* pml3 = this.findTable(this.pml4, pml4Entry);
+        size_t* pml3 = findTable(this.pml4, pml4Entry);
         assert(pml3 != null);
-        size_t* pml2 = this.findTable(pml3, pml3Entry);
+        size_t* pml2 = findTable(pml3, pml3Entry);
         assert(pml2 != null);
-        size_t* pml1 = this.findTable(pml2, pml2Entry);
+        size_t* pml1 = findTable(pml2, pml2Entry);
         assert(pml1 != null);
 
         // Unmap.
         pml1[pml1Entry] = 0;
 
         // Cleanup.
-        this.cleanTable(pml3);
-        this.cleanTable(pml2);
-        this.cleanTable(pml1);
+        cleanTable(pml3);
+        cleanTable(pml2);
+        cleanTable(pml1);
 
-        this.lock.release();
-    }
-
-    private void cleanTable(size_t* table) {
-        for (size_t i = 0;; i++) {
-            if (i == PT_ENTRIES) {
-                pmmFree(cast(void*)(table) - MEM_PHYS_OFFSET, 1);
-            } else if (table[i] & PT_PRESENT) {
-                return;
-            }
-        }
-    }
-
-    private size_t* findTable(size_t* parent, size_t index) {
-        if (parent[index] & PT_PRESENT) {
-            // Remove flags and take address.
-            return cast(size_t*)((parent[index] & ~(0xFFF)) + MEM_PHYS_OFFSET);
-        } else {
-            return null;
-        }
-    }
-
-    private size_t* findOrAllocTable(size_t* parent, size_t index) {
-        auto ret = findTable(parent, index);
-
-        if (ret == null) {
-            ret = cast(size_t*)(pmmAllocAndZero(1) + MEM_PHYS_OFFSET);
-            parent[index] = (cast(size_t)ret - MEM_PHYS_OFFSET) | 0b11;
-        }
-
-        return ret;
+        lock.release();
     }
 }
