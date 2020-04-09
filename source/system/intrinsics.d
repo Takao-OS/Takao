@@ -49,7 +49,3 @@ ubyte inb(ushort port) {
 
     return val;
 }
-
-void wait() {
-    outb(0x80, 0);
-}

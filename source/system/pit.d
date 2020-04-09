@@ -13,7 +13,5 @@ void initPIT() {
     ubyte h = cast(ubyte)((divisor >> 8) & 0xFF);
 
     outb(0x40, l);
-    wait();
     outb(0x40, h);
-    wait();
 }
