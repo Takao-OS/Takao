@@ -3,6 +3,9 @@ module system.idt;
 import system.gdt;
 import system.pic;
 import scheduler.thread;
+import system.cpu;
+import lib.debugging;
+import system.exceptions;
 
 private align(1) struct IDTDescriptor {
     align(1):
@@ -31,9 +34,26 @@ void initIDT() {
 
     idtPointer = IDTPointer(idtEntries.sizeof - 1, cast(void*)&idtEntries);
 
-    foreach (uint i; 0..idtEntries.length) {
-        addInterrupt(i, &defaultInterruptHandler, 0);
-    }
+    addInterrupt(0x00, &excDiv0Handler, 0);
+    addInterrupt(0x01, &excDebugHandler, 0);
+    addInterrupt(0x02, &excNmiHandler, 0);
+    addInterrupt(0x03, &excBreakpointHandler, 0);
+    addInterrupt(0x04, &excOverflowHandler, 0);
+    addInterrupt(0x05, &excBoundRangeHandler, 0);
+    addInterrupt(0x06, &excInvOpcodeHandler, 0);
+    addInterrupt(0x07, &excNoDevHandler, 0);
+    addInterrupt(0x08, &excDoubleFaultHandler, 0);
+    addInterrupt(0x0a, &excInvTssHandler, 0);
+    addInterrupt(0x0b, &excNoSegmentHandler, 0);
+    addInterrupt(0x0c, &excSsFaultHandler, 0);
+    addInterrupt(0x0d, &excGpfHandler, 0);
+    addInterrupt(0x0e, &excPageFaultHandler, 0);
+    addInterrupt(0x10, &excX87FpHandler, 0);
+    addInterrupt(0x11, &excAlignmentCheckHandler, 0);
+    addInterrupt(0x12, &excMachineCheckHandler, 0);
+    addInterrupt(0x13, &excSimdFpHandler, 0);
+    addInterrupt(0x14, &excVirtHandler, 0);
+    addInterrupt(0x1e, &excSecurityHandler, 0);
 
     addInterrupt(0x20, &pitHandler, 0);
 
@@ -42,7 +62,9 @@ void initIDT() {
     }
 }
 
-private void addInterrupt(uint number, void function() handler, ubyte ist) {
+private alias extern (C) void function() Handler;
+
+private void addInterrupt(uint number, Handler handler, ubyte ist) {
     auto address = cast(size_t)handler;
 
     idtEntries[number].offsetLow    = cast(ushort)address;
@@ -54,12 +76,7 @@ private void addInterrupt(uint number, void function() handler, ubyte ist) {
     idtEntries[number].reserved     = 0;
 }
 
-private void defaultInterruptHandler() {
-    import lib.debugging;
-    panic("Undefined interrupt!");
-}
-
-void pitHandler() {
+extern (C) void pitHandler() {
     asm {
         naked;
 

@@ -8,7 +8,7 @@ BUILDDIR  := build
 
 # Compilers, several programs and their flags.
 DC   = ldc2
-AS   = clang
+AS   = nasm
 LD   = ld.lld
 QEMU = qemu-system-x86_64
 
@@ -20,14 +20,14 @@ QEMUFLAGS = -m 8G -smp 4 -debugcon stdio -enable-kvm -cpu host -no-reboot -no-sh
 DHARDFLAGS := ${DFLAGS} -mtriple=amd64-unknown-elf -relocation-model=static \
 	-code-model=kernel -mattr=-sse,-sse2,-sse3,-ssse3 -disable-red-zone     \
 	-betterC -op
-ASHARDFLAGS   := ${ASFLAGS} --target=amd64-unknown-elf -ffreestanding -nostdlib
+ASHARDFLAGS   := ${ASFLAGS} -felf64
 LDHARDFLAGS   := ${LDFLAGS} --oformat elf_amd64 --nostdlib
 QEMUHARDFLAGS := ${QEMUFLAGS}
 
 # Source to compile.
 DSOURCE   := $(shell find ${SOURCEDIR} -type f -name '*.d')
-ASMSOURCE := $(shell find ${SOURCEDIR} -type f -name '*.S')
-OBJ       := $(DSOURCE:.d=.o) $(ASMSOURCE:.S=.o)
+ASMSOURCE := $(shell find ${SOURCEDIR} -type f -name '*.asm')
+OBJ       := $(DSOURCE:.d=.o) $(ASMSOURCE:.asm=.o)
 
 # Where the fun begins!
 .PHONY: all submodules hdd test clean distclean
@@ -42,9 +42,9 @@ ${KERNEL}: ${OBJ}
 	@echo "${CMAGENTA}${DC}${CRESET} '$@'"
 	@${DC} ${DHARDFLAGS} -I=${SOURCEDIR} -c $< -of=$@
 
-%.o: %.S
+%.o: %.asm
 	@echo "${CMAGENTA}${AS}${CRESET} '$@'"
-	@${AS} ${ASHARDFLAGS} -I${SOURCEDIR} -c $< -o $@
+	@${AS} ${ASHARDFLAGS} -I${SOURCEDIR} $< -o $@
 
 hdd: ${IMAGE}
 
