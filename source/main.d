@@ -28,18 +28,18 @@ extern (C) void main(Stivale* stivale) {
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
+    writeln("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
 
+    writeln("Spawning main thread");
     spawnThread(&mainThread, stivale);
-
     asm { sti; }
 
     for (;;) asm { hlt; }
 }
 
 extern (C) void mainThread(Stivale* stivale) {
-    writeln("Spawning services");
-
+    writeln("Spawning services, switching to kmessage");
     spawnThread(&kmessageService, null);
     spawnThread(&terminalService, &stivale.framebuffer);
 

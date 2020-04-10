@@ -59,8 +59,8 @@ private void printMessage(string msg) {
             mov AL,   c;
             out 0xE9, AL;
         }
-
-        // Terminal.
-        terminalQueue.sendMessageSync(TerminalMessage(msg));
     }
+
+    // Terminal.
+    terminalQueue.sendMessageSync(TerminalMessage(msg));
 }

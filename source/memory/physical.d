@@ -4,6 +4,7 @@ import lib.stivale;
 import memory.virtual;
 import lib.lock;
 import lib.alignment;
+import lib.bit;
 
 __gshared extern extern (C) void* kernelTop;
 
@@ -134,41 +135,4 @@ void pmmFree(void* ptr, size_t count) {
     }
 
     pmmLock.release();
-}
-
-
-extern (C) int bt(size_t* bitmap, size_t index) {
-    asm {
-        naked;
-
-        xor EAX, EAX;
-        bt [RDI], ESI;
-        setc AL;
-
-        ret;
-    }
-}
-
-extern (C) int bts(size_t* bitmap, size_t index) {
-    asm {
-        naked;
-
-        xor EAX, EAX;
-        bts [RDI], ESI;
-        setc AL;
-
-        ret;
-    }
-}
-
-extern (C) int btr(size_t* bitmap, size_t index) {
-    asm {
-        naked;
-
-        xor EAX, EAX;
-        btr [RDI], ESI;
-        setc AL;
-
-        ret;
-    }
 }
