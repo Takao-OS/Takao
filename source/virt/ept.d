@@ -2,7 +2,6 @@ module virt.ept;
 
 import memory.physical;
 import memory.virtual;
-import memory.pageTable;
 import lib.lock;
 
 private immutable ulong EPT_READ = 0;
@@ -28,9 +27,9 @@ struct EptAddressSpace {
         int pdeIdx   = (((guestAddress) >> 21) & 0x1ff);
         int pteIdx   = (((guestAddress) >> 12) & 0x1ff);
 
-        size_t* pml3e = findOrAllocTable(this.pml4e, pml4eIdx, EPT_READ);
-        size_t* pml2e = findOrAllocTable(pml3e, pdpteIdx, EPT_READ);
-        size_t* pml1e = findOrAllocTable(pml2e, pdeIdx, EPT_READ);
+        size_t* pml3e = findOrAllocPageTable(this.pml4e, pml4eIdx, EPT_READ);
+        size_t* pml2e = findOrAllocPageTable(pml3e, pdpteIdx, EPT_READ);
+        size_t* pml1e = findOrAllocPageTable(pml2e, pdeIdx, EPT_READ);
 
         pml1e[pteIdx] = hostAddress | flags;
         this.lock.release();
@@ -46,20 +45,20 @@ struct EptAddressSpace {
         auto pml1Entry = (guestAddress & (cast(size_t)0x1FF << 12)) >> 12;
 
         // Find or die if we dont find them.
-        size_t* pml3 = findTable(this.pml4e, pml4Entry);
+        size_t* pml3 = findPageTable(this.pml4e, pml4Entry);
         assert(pml3 != null);
-        size_t* pml2 = findTable(pml3, pml3Entry);
+        size_t* pml2 = findPageTable(pml3, pml3Entry);
         assert(pml2 != null);
-        size_t* pml1 = findTable(pml2, pml2Entry);
+        size_t* pml1 = findPageTable(pml2, pml2Entry);
         assert(pml1 != null);
 
         // Unmap.
         pml1[pml1Entry] = 0;
 
         // Cleanup.
-        cleanTable(pml3);
-        cleanTable(pml2);
-        cleanTable(pml1);
+        cleanPageTable(pml3);
+        cleanPageTable(pml2);
+        cleanPageTable(pml1);
 
         this.lock.release();
     }
