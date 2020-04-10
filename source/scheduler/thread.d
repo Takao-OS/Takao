@@ -1,7 +1,7 @@
 module scheduler.thread;
 
 import system.gdt;
-import system.intrinsics;
+import system.cpu;
 import memory.physical;
 import memory.virtual;
 import lib.lock;

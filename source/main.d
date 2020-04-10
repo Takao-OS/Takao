@@ -11,6 +11,7 @@ import lib.debugging;
 import scheduler.thread;
 import services.kmessage;
 import services.terminal;
+import acpi.lib;
 
 extern (C) void main(Stivale* stivale) {
     writeln("Hai~ <3. Doing some preparatives");
@@ -27,11 +28,22 @@ extern (C) void main(Stivale* stivale) {
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
+    initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
+
+    spawnThread(&mainThread, stivale);
+
+    asm { sti; }
+
+    for (;;) asm { hlt; }
+}
+
+extern (C) void mainThread(Stivale* stivale) {
     writeln("Spawning services");
 
     spawnThread(&kmessageService, null);
     spawnThread(&terminalService, &stivale.framebuffer);
-    asm { sti; }
 
-    for (;;) asm { hlt; }
+    for (;;) {
+        dequeueAndYield();
+    }
 }

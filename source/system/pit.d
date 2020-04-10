@@ -1,6 +1,6 @@
 module cpu.pit;
 
-import system.intrinsics;
+import system.cpu;
 
 private immutable ushort pitFrequency = 1000;
 

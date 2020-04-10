@@ -1,6 +1,6 @@
 module system.pic;
 
-import system.intrinsics;
+import system.cpu;
 
 immutable PIC_EOI = 0x20;
 

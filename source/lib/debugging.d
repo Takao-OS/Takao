@@ -1,7 +1,7 @@
 module lib.debugging;
 
 import core.stdc.stdarg;
-import system.intrinsics;
+import system.cpu;
 
 public alias cstring = immutable(char)*;
 

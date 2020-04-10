@@ -15,7 +15,7 @@ QEMU = qemu-system-x86_64
 DFLAGS    = -O -g -de
 ASFLAGS   = -O2
 LDFLAGS   = -gc-sections
-QEMUFLAGS = -m 8G -smp 4 -debugcon stdio -enable-kvm
+QEMUFLAGS = -m 8G -smp 4 -debugcon stdio -enable-kvm -cpu host -no-reboot -no-shutdown -d int
 
 DHARDFLAGS := ${DFLAGS} -mtriple=amd64-unknown-elf -relocation-model=static \
 	-code-model=kernel -mattr=-sse,-sse2,-sse3,-ssse3 -disable-red-zone     \

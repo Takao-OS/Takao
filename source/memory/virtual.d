@@ -1,6 +1,6 @@
 module memory.virtual;
 
-import system.intrinsics;
+import system.cpu;
 import memory.physical;
 import lib.lock;
 import lib.stivale;
