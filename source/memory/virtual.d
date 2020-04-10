@@ -4,12 +4,43 @@ import system.cpu;
 import memory.physical;
 import lib.lock;
 import lib.stivale;
-import memory.pageTable;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
 immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000;
 
 private immutable PT_PRESENT = 1 << 0;
+private immutable PT_ENTRIES = 512;
+
+size_t* findOrAllocPageTable(size_t* table, size_t index, size_t flags) {
+    auto ret = findPageTable(table, index);
+
+    if (ret == null) {
+        ret = cast(size_t*)(pmmAllocAndZero(1) + MEM_PHYS_OFFSET);
+        assert(cast(size_t)ret != MEM_PHYS_OFFSET);
+        table[index] = (cast(size_t)ret - MEM_PHYS_OFFSET) | flags;
+    }
+
+    return ret;
+}
+
+size_t* findPageTable(size_t* table, size_t index) {
+    if (table[index] & PT_PRESENT) {
+        // Remove flags and take address.
+        return cast(size_t*)((table[index] & ~(0xFFF)) + MEM_PHYS_OFFSET);
+    } else {
+        return null;
+    }
+}
+
+void cleanPageTable(size_t* table) {
+    for (size_t i = 0;; i++) {
+        if (i == PT_ENTRIES) {
+            pmmFree(cast(void*)(table) - MEM_PHYS_OFFSET, 1);
+        } else if (table[i] & PT_PRESENT) {
+            return;
+        }
+    }
+}
 
 struct AddressSpace {
     private Lock    lock;
@@ -72,9 +103,9 @@ struct AddressSpace {
         auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
 
         // Find or create tables.
-        size_t* pml3 = findOrAllocTable(this.pml4, pml4Entry, 0b111);
-        size_t* pml2 = findOrAllocTable(pml3, pml3Entry, 0b111);
-        size_t* pml1 = findOrAllocTable(pml2, pml2Entry, 0b111);
+        size_t* pml3 = findOrAllocPageTable(this.pml4, pml4Entry, 0b111);
+        size_t* pml2 = findOrAllocPageTable(pml3, pml3Entry, 0b111);
+        size_t* pml1 = findOrAllocPageTable(pml2, pml2Entry, 0b111);
 
         // Set the entry as present and point it to the passed address.
         // Also set flags.
@@ -93,20 +124,20 @@ struct AddressSpace {
         auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
 
         // Find or die if we dont find them.
-        size_t* pml3 = findTable(this.pml4, pml4Entry);
+        size_t* pml3 = findPageTable(this.pml4, pml4Entry);
         assert(pml3 != null);
-        size_t* pml2 = findTable(pml3, pml3Entry);
+        size_t* pml2 = findPageTable(pml3, pml3Entry);
         assert(pml2 != null);
-        size_t* pml1 = findTable(pml2, pml2Entry);
+        size_t* pml1 = findPageTable(pml2, pml2Entry);
         assert(pml1 != null);
 
         // Unmap.
         pml1[pml1Entry] = 0;
 
         // Cleanup.
-        cleanTable(pml3);
-        cleanTable(pml2);
-        cleanTable(pml1);
+        cleanPageTable(pml3);
+        cleanPageTable(pml2);
+        cleanPageTable(pml1);
 
         lock.release();
     }
