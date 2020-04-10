@@ -9,7 +9,7 @@ addons:
     - make
     - git
     - lld-8
-    - clang
+    - nasm
 
 script:
   - make
