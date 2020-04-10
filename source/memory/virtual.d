@@ -26,7 +26,7 @@ size_t* findOrAllocPageTable(size_t* table, size_t index, size_t flags) {
 size_t* findPageTable(size_t* table, size_t index) {
     if (table[index] & PT_PRESENT) {
         // Remove flags and take address.
-        return cast(size_t*)((table[index] & ~(0xFFF)) + MEM_PHYS_OFFSET);
+        return cast(size_t*)((table[index] & ~(cast(size_t)0xfff)) + MEM_PHYS_OFFSET);
     } else {
         return null;
     }
@@ -97,10 +97,10 @@ struct AddressSpace {
         this.lock.acquire();
 
         // Calculate the indexes in the various tables using the virtual addr.
-        auto pml4Entry = (virtualAddress & (cast(size_t)0x1FF << 39)) >> 39;
-        auto pml3Entry = (virtualAddress & (cast(size_t)0x1FF << 30)) >> 30;
-        auto pml2Entry = (virtualAddress & (cast(size_t)0x1FF << 21)) >> 21;
-        auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
+        auto pml4Entry = (virtualAddress & (cast(size_t)0x1ff << 39)) >> 39;
+        auto pml3Entry = (virtualAddress & (cast(size_t)0x1ff << 30)) >> 30;
+        auto pml2Entry = (virtualAddress & (cast(size_t)0x1ff << 21)) >> 21;
+        auto pml1Entry = (virtualAddress & (cast(size_t)0x1ff << 12)) >> 12;
 
         // Find or create tables.
         size_t* pml3 = findOrAllocPageTable(this.pml4, pml4Entry, 0b111);

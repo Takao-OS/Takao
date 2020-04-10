@@ -118,7 +118,7 @@ void* pmmAlloc(size_t count) {
 void* pmmAllocAndZero(size_t count) {
     auto ret = cast(ulong*)(pmmAlloc(count) + MEM_PHYS_OFFSET);
 
-    foreach (i; 0..(count / ulong.sizeof)) {
+    foreach (i; 0..(count * (PAGE_SIZE / ulong.sizeof))) {
         ret[i] = 0;
     }
 

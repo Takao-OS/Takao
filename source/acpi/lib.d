@@ -49,7 +49,7 @@ void initACPI(RSDP *rsdp) {
 }
 
 T* findSDT(T)(string signature, int index) {
-    SET* ptr;
+    SDT* ptr;
     int  count = 0;
 
     size_t limit = (sdt.length - SDT.sizeof) / (useXSDT ? 8 : 4);
