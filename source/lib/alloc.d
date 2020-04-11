@@ -50,6 +50,26 @@ T* newArray(T)(size_t count) {
     return cast(T*)ptr;
 }
 
+T* resizeArray(T)(T* oldPtr, size_t newCount) {
+    auto size      = T.sizeof * newCount;
+    auto pageCount = divRoundUp(size, PAGE_SIZE);
+    auto meta      = cast(ArrayAllocMetadata*)oldPtr;
+
+    if (meta.pages == pageCount) {
+        return oldPtr;
+    } else if (meta.pages > pageCount) {
+        auto ptr = cast(void*)oldPtr + (pageCount * PAGE_SIZE) - MEM_PHYS_OFFSET;
+        pmmFree(ptr, meta.pages - pageCount);
+        meta.pages = pageCount;
+        return oldPtr;
+    } else if (meta.pages < pageCount) {
+        auto ptr = newArray!T(newCount);
+        memcpy(ptr, oldPtr, meta.pages * PAGE_SIZE);
+        delArray(oldPtr);
+        return ptr;
+    }
+}
+
 void delArray(void *ptr) {
     auto meta = cast(ArrayAllocMetadata*)ptr;
 
