@@ -3,6 +3,7 @@ module lib.alloc;
 import memory.physical;
 import memory.virtual;
 import lib.math;
+import lib.glue;
 
 T* newObj(T, A...)(A args) {
     auto size = divRoundUp(T.sizeof, PAGE_SIZE);
@@ -58,7 +59,8 @@ T* resizeArray(T)(T* oldPtr, size_t newCount) {
     if (meta.pages == pageCount) {
         return oldPtr;
     } else if (meta.pages > pageCount) {
-        auto ptr = cast(void*)oldPtr + (pageCount * PAGE_SIZE) - MEM_PHYS_OFFSET;
+        auto ptr = cast(void*)oldPtr + PAGE_SIZE;
+        ptr += (pageCount * PAGE_SIZE) - MEM_PHYS_OFFSET;
         pmmFree(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
         return oldPtr;
