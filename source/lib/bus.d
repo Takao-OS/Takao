@@ -15,12 +15,10 @@ struct MessageQueue(T) {
 
     private QueueElem[256] queue;
 
-    void setReceiverThread(int thread) {
-        this.threadId = thread;
-    }
-
     QueueElem receiveMessage() {
         this.lock.acquire();
+
+        threadId = currentThread;
 
         while (queueIndex == 0) {
             // There are no messages to read, yield.

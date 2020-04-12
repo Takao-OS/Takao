@@ -24,8 +24,8 @@ struct KMessage {
 __gshared MessageQueue!KMessage kmessageQueue;
 
 void kmessageService(void* unused) {
-    kmessageQueue.setReceiverThread(currentThread);
-
+    kmessageQueue.sendMessageAsync(KMessage(KMessagePriority.Log,
+                                   "Started KMessage service"));
     while (true) {
         auto msg = kmessageQueue.receiveMessage();
 
@@ -60,5 +60,5 @@ private void printMessage(string msg) {
     }
 
     // Terminal.
-    terminalQueue.sendMessageSync(TerminalMessage(msg));
+    terminalQueue.sendMessageAsync(TerminalMessage(msg));
 }

@@ -14,7 +14,6 @@ struct TerminalMessage {
 __gshared MessageQueue!TerminalMessage terminalQueue;
 
 void terminalService(StivaleFramebuffer* fb) {
-    terminalQueue.setReceiverThread(currentThread);
     log("Started Terminal service");
 
     auto tty = TTY(*fb);
