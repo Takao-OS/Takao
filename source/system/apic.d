@@ -126,8 +126,12 @@ void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool stat
     ioAPICWrite(ioAPIC, ioredtbl + 1, cast(uint)(redirect >> 32));
 }
 
+extern (C) __gshared uint* lapicEOIptr;
+
 void initAPIC() {
     auto madt = getMADTEntries();
     auto lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
+    lapicEOIptr = cast(uint*)(lapicBase + 0xb0);
+    lapicEnable();
     log("apic: Done! APIC initialised.");
 }

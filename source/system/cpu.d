@@ -39,7 +39,7 @@ void initCPU(size_t cpuNumber, byte lapicID) {
     writeMSR(0xc0000101, cpuNumber);
 
     if (getArraySize(cpuLocals) <= cpuNumber) {
-        resizeArray(&cpuLocals, cpuNumber);
+        resizeArray(&cpuLocals, cpuNumber + 1);
     }
 
     cpuLocals[cpuNumber].lapicID = lapicID;

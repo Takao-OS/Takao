@@ -96,7 +96,8 @@ extern (C) void pitHandler() {
         push R15;
 
         mov RDI, RSP;
-        call lapicEOI;
+        mov RAX, lapicEOIptr;
+        mov [RAX], 0;
         call reschedule;
 
         pop R15;

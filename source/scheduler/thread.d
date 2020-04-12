@@ -27,9 +27,10 @@ extern (C) void reschedule(Registers* regs) {
 
     if (currentThread != -1) {
         threadPool[currentThread].regs = *regs;
+        currentThread = getNextThread(threadPool[currentThread].runningQueueIndex + 1);
+    } else {
+        currentThread = getNextThread(0);
     }
-
-    currentThread = getNextThread(currentThread);
 
     if (currentThread == -1) {
         lock.release();
@@ -121,15 +122,15 @@ extern (C) void yield() {
     }
 }
 
-private int getNextThread(int currentThread) {
-    int t = currentThread + 1;
-    for (int i = 0; i < runningQueue.length + 1; i++, t++) {
-        if (t == runningQueue.length) {
-            t = 0;
+private int getNextThread(int baseQueueIndex) {
+    foreach (int i; 0..(runningQueue.length + 1)) {
+        if (baseQueueIndex >= runningQueue.length) {
+            baseQueueIndex = 0;
         }
-        if (runningQueue[t] != null) {
-            return runningQueue[t].id;
+        if (runningQueue[baseQueueIndex] != null) {
+            return runningQueue[baseQueueIndex].id;
         }
+        baseQueueIndex++;
     }
 
     return -1;

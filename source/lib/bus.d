@@ -60,7 +60,7 @@ struct MessageQueue(T) {
             queueThread(this.threadId);
         }
 
-       return 0;
+        return 0;
     }
 
     int sendMessageAsync(T)(T message) {
