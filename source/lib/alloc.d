@@ -29,6 +29,13 @@ void delObj(T)(T* object) {
 
 struct ArrayAllocMetadata {
     size_t pages;
+    size_t count;
+}
+
+size_t getArraySize(T)(T* ptr) {
+    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
+
+    return meta.count;
 }
 
 T* newArray(T)(size_t count) {
@@ -47,6 +54,7 @@ T* newArray(T)(size_t count) {
     ptr += PAGE_SIZE;
 
     meta.pages = pageCount;
+    meta.count = count;
 
     return cast(T*)ptr;
 }
@@ -54,15 +62,17 @@ T* newArray(T)(size_t count) {
 T* resizeArray(T)(T* oldPtr, size_t newCount) {
     auto size      = T.sizeof * newCount;
     auto pageCount = divRoundUp(size, PAGE_SIZE);
-    auto meta      = cast(ArrayAllocMetadata*)oldPtr;
+    auto meta      = cast(ArrayAllocMetadata*)(oldPtr - PAGE_SIZE);
 
     if (meta.pages == pageCount) {
+        meta.count = newCount;
         return oldPtr;
     } else if (meta.pages > pageCount) {
-        auto ptr = cast(void*)oldPtr + PAGE_SIZE;
+        auto ptr = cast(void*)oldPtr;
         ptr += (pageCount * PAGE_SIZE) - MEM_PHYS_OFFSET;
         pmmFree(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
+        meta.count = newCount;
         return oldPtr;
     } else if (meta.pages < pageCount) {
         auto ptr = newArray!T(newCount);
@@ -73,9 +83,10 @@ T* resizeArray(T)(T* oldPtr, size_t newCount) {
 }
 
 void delArray(void *ptr) {
-    auto meta = cast(ArrayAllocMetadata*)ptr;
+    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
 
     ptr -= MEM_PHYS_OFFSET;
+    ptr -= PAGE_SIZE;
 
     pmmFree(ptr, meta.pages + 1);
 }
