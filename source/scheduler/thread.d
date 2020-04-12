@@ -5,7 +5,7 @@ import system.cpu;
 import memory.physical;
 import memory.virtual;
 import lib.lock;
-import lib.debugging;
+import lib.messages;
 
 struct Thread {
     bool      present;

@@ -3,7 +3,6 @@ module services.terminal.framebuffer;
 import memory.virtual;
 import lib.stivale;
 import lib.alloc;
-import lib.glue;
 
 alias Colour = uint;
 

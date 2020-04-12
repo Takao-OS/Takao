@@ -7,31 +7,33 @@ import system.pic;
 import system.pit;
 import memory.physical;
 import memory.virtual;
-import lib.debugging;
+import lib.messages;
 import scheduler.thread;
 import services.kmessage;
 import services.terminal;
 import acpi.lib;
 
+__gshared bool servicesUp;
+
 extern (C) void main(Stivale* stivale) {
-    writeln("Hai~ <3. Doing some preparatives");
+    log("Hai~ <3. Doing some preparatives");
     stivale = cast(Stivale*)(cast(size_t)stivale + MEM_PHYS_OFFSET);
 
-    writeln("Initialising low level structures and devices.");
+    log("Initialising low level structures and devices.");
     initGDT();
     initPIT();
     initPIC();
     initIDT();
 
-    writeln("Initialising memory management and GC");
+    log("Initialising memory management and GC");
     initPhysicalAllocator(stivale.memmap);
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
-    writeln("Initialising ACPI");
+    log("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
 
-    writeln("Spawning main thread");
+    log("Spawning main thread");
     spawnThread(&mainThread, stivale);
     asm { sti; }
 
@@ -39,7 +41,8 @@ extern (C) void main(Stivale* stivale) {
 }
 
 extern (C) void mainThread(Stivale* stivale) {
-    writeln("Spawning services, switching to kmessage");
+    log("Spawning services, switching to kmessage");
+    servicesUp = true;
     spawnThread(&kmessageService, null);
     spawnThread(&terminalService, &stivale.framebuffer);
 

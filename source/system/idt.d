@@ -4,7 +4,6 @@ import system.gdt;
 import system.pic;
 import scheduler.thread;
 import system.cpu;
-import lib.debugging;
 import system.exceptions;
 
 private align(1) struct IDTDescriptor {

@@ -1,7 +1,7 @@
 module system.exceptions;
 
 import system.cpu;
-import lib.debugging;
+import lib.messages;
 
 extern extern (C) void excDiv0Handler();
 extern extern (C) void excDebugHandler();
@@ -80,6 +80,6 @@ private __gshared string[] exceptionNames = [
 ];
 
 extern (C) void exceptionHandler(int exception, Registers* regs, size_t errorCode) {
-    panic("Fatal exception `%s` (%u), error code: %x, RIP: %x",
-          cast(char*)exceptionNames[exception], exception, errorCode, regs.rip);
+    panic("Fatal exception ", exceptionNames[exception], " (", exception,
+        ") error code: ", errorCode, " RIP: ", regs.rip);
 }

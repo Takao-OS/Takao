@@ -1,28 +1,20 @@
-module glue;
+module lib.glue;
 
-import lib.debugging;
+import lib.string;
+import lib.messages;
 
 extern (C) __gshared void* _Dmodule_ref;
 
-extern (C) void _d_arraybounds(string file, uint line) {
-    panic("_d_arraybounds(%s, %u) called", cast(char*)file, line);
-}
-
-extern (C) void _d_assert_msg(string msg, string file, uint line) {
-    panic("_d_assert_msg(%s, %s, %u) called",
-          cast(char*)msg, cast(char*)file, line);
-}
-
 extern (C) void _Unwind_Resume(void *p) {
-    panic("_Unwind_Resume(%x) called", p);
+    panic("_Unwind_Resume(", cast(size_t)p, ") called");
 }
 
 extern (C) void _d_eh_personality() {
-    panic("_d_eh_personality() called");
+    panic("_d_eh_personality called");
 }
 
 extern (C) void __assert(const char* exp, const char* file, uint line) {
-    panic("In file '%s', line '%u'\n> %s\nFailed assertion", file, line, exp);
+    panic("Assertion failed in '", fromCString(file), "' line ", line);
 }
 
 extern (C) void *memcpy(void* dest, const void* src, size_t n) {

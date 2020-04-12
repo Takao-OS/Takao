@@ -1,6 +1,7 @@
 module acpi.lib;
 
-import lib.debugging;
+import lib.string;
+import lib.messages;
 import lib.glue;
 import memory.virtual;
 
@@ -36,16 +37,16 @@ private __gshared bool useXSDT;
 private __gshared SDT* sdt;
 
 void initACPI(RSDP* rsdp) {
-    writeln("acpi: RSDP at %x, ACPI revision %u", rsdp, rsdp.rev);
+    log("acpi: RSDP at ", cast(size_t)rsdp, ", ACPI revision ", rsdp.rev);
 
     if (rsdp.rev >= 2 && rsdp.xsdtAddr) {
         useXSDT = true;
         sdt = cast(SDT*)(cast(void*)rsdp.xsdtAddr + MEM_PHYS_OFFSET);
-        writeln("acpi: Using XSDT at %x", sdt);
+        log("acpi: Using XSDT at ", cast(size_t)sdt);
     } else {
         useXSDT = false;
         sdt = cast(SDT*)(cast(void*)rsdp.rsdtAddr + MEM_PHYS_OFFSET);
-        writeln("acpi: Using RSDT at %x", sdt);
+        log("acpi: Using RSDT at ", cast(size_t)sdt);
     }
 }
 
@@ -63,14 +64,15 @@ T* findSDT(T)(string signature, int index) {
             auto p = cast(uint*)(&sdt.sdtPtr);
             ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         }
-        if (!memcmp(cast(void*)ptr.signature, cast(void*)signature, 4)) {
+
+        if (fromCString(ptr.signature, 4) == signature) {
             if (count++ == index) {
-                writeln("acpi: Found \"%s\" at %x", cast(char*)signature, ptr);
+                log("acpi: Found '", signature, "' at ", cast(size_t)ptr);
                 return cast(T*)ptr;
             }
         }
     }
 
-    writeln("acpi: \"%s\" not found", cast(char*)signature);
+    log("acpi: Did not find '", signature, "'");
     return null;
 }

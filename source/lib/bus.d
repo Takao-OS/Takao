@@ -2,7 +2,6 @@ module lib.bus;
 
 import lib.lock;
 import scheduler.thread;
-import lib.debugging;
 
 struct MessageQueue(T) {
     private Lock lock;
