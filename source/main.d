@@ -14,6 +14,7 @@ import services.terminal;
 import acpi.lib;
 import system.apic;
 import system.cpu;
+import lib.pci;
 
 __gshared bool servicesUp;
 
@@ -41,6 +42,7 @@ extern (C) void main(Stivale* stivale) {
 
     initPIT();
     enablePIT();
+    initPCI();
 
     log("Spawning main thread");
     spawnThread(&mainThread, stivale);
