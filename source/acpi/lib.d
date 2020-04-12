@@ -65,7 +65,7 @@ T* findSDT(T)(string signature, int index) {
             ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         }
 
-        if (fromCString(ptr.signature, 4) == signature) {
+        if (fromCString(cast(char*)ptr.signature, 4) == signature) {
             if (count++ == index) {
                 log("acpi: Found '", signature, "' at ", cast(size_t)ptr);
                 return cast(T*)ptr;
