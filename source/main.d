@@ -25,24 +25,24 @@ extern (C) void main(Stivale* stivale) {
     log("Initialising low level structures and devices.");
     initGDT();
     initIDT();
-    initPIC();
 
     log("Initialising memory management and GC");
     initPhysicalAllocator(stivale.memmap);
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
+    log("Init CPU");
     initCPULocals();
     initCPU(0, 0);
 
     log("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
 
+    log("Initialising interrupt controlling and timer");
+    initPIC();
     initAPIC();
-
     initPIT();
     enablePIT();
-    initPCI();
 
     log("Spawning main thread");
     spawnThread(&mainThread, stivale);
@@ -56,6 +56,9 @@ extern (C) void mainThread(Stivale* stivale) {
     servicesUp = true;
     spawnThread(&kmessageService, null);
     spawnThread(&terminalService, &stivale.framebuffer);
+
+    log("Initialising PCI");
+    initPCI();
 
     for (;;) {
         dequeueAndYield();

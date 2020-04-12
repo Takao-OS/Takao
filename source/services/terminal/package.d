@@ -4,7 +4,6 @@ import scheduler.thread;
 import lib.stivale;
 import lib.alloc;
 import lib.bus;
-import lib.messages;
 import services.terminal.tty;
 
 struct TerminalMessage {
@@ -14,10 +13,11 @@ struct TerminalMessage {
 __gshared MessageQueue!TerminalMessage terminalQueue;
 
 void terminalService(StivaleFramebuffer* fb) {
-    log("Started Terminal service");
-
     auto tty = TTY(*fb);
     tty.clear();
+
+    // FIXME: Not a log() because that breaks the messaging system quite hard.
+    tty.print("Started Terminal service\n");
 
     while (true) {
         auto msg = terminalQueue.receiveMessage();

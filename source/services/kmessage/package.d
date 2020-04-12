@@ -60,5 +60,5 @@ private void printMessage(string msg) {
     }
 
     // Terminal.
-    terminalQueue.sendMessageAsync(TerminalMessage(msg));
+    terminalQueue.sendMessageSync(TerminalMessage(msg));
 }
