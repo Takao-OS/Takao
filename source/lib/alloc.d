@@ -38,7 +38,7 @@ size_t getArraySize(T)(T* ptr) {
     return meta.count;
 }
 
-T* newArray(T)(size_t count) {
+T* newArray(T)(size_t count = 0) {
     auto size      = T.sizeof * count;
     auto pageCount = divRoundUp(size, PAGE_SIZE);
 
@@ -59,7 +59,21 @@ T* newArray(T)(size_t count) {
     return cast(T*)ptr;
 }
 
-T* resizeArray(T)(T* oldPtr, size_t newCount) {
+T* resizeArray(T)(T* oldPtr, long diff) {
+    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
+
+    size_t newCount;
+
+    if ((diff + cast(long)meta.count) < 0) {
+        newCount = 0;
+    } else {
+        newCount = cast(size_t)(diff + cast(long)meta.count);
+    }
+
+    return resizeArrayAbs(oldPtr, newCount);
+}
+
+T* resizeArrayAbs(T)(T* oldPtr, size_t newCount) {
     auto size      = T.sizeof * newCount;
     auto pageCount = divRoundUp(size, PAGE_SIZE);
     auto meta      = cast(ArrayAllocMetadata*)(oldPtr - PAGE_SIZE);
