@@ -37,16 +37,16 @@ private __gshared bool useXSDT;
 private __gshared SDT* sdt;
 
 void initACPI(RSDP* rsdp) {
-    log("acpi: RSDP at ", cast(size_t)rsdp, ", ACPI revision ", rsdp.rev);
+    log("acpi: RSDP at ", rsdp, ", ACPI revision ", rsdp.rev);
 
     if (rsdp.rev >= 2 && rsdp.xsdtAddr) {
         useXSDT = true;
         sdt = cast(SDT*)(cast(void*)rsdp.xsdtAddr + MEM_PHYS_OFFSET);
-        log("acpi: Using XSDT at ", cast(size_t)sdt);
+        log("acpi: Using XSDT at ", sdt);
     } else {
         useXSDT = false;
         sdt = cast(SDT*)(cast(void*)rsdp.rsdtAddr + MEM_PHYS_OFFSET);
-        log("acpi: Using RSDT at ", cast(size_t)sdt);
+        log("acpi: Using RSDT at ", sdt);
     }
 }
 
@@ -67,7 +67,7 @@ T* findSDT(T)(string signature, int index) {
 
         if (fromCString(cast(char*)ptr.signature, 4) == signature) {
             if (count++ == index) {
-                log("acpi: Found '", signature, "' at ", cast(size_t)ptr);
+                log("acpi: Found '", signature, "' at ", ptr);
                 return cast(T*)ptr;
             }
         }

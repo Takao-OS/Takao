@@ -5,8 +5,9 @@ import main;
 import system.cpu;
 import lib.string;
 
-__gshared size_t    bufferIndex;
-__gshared char[256] buffer;
+private immutable CONVERSION_TABLE = "0123456789abcdef";
+private __gshared size_t    bufferIndex;
+private __gshared char[256] buffer;
 
 void log(T...)(T form) {
     format(form);
@@ -24,7 +25,7 @@ void error(T...)(T form) {
 }
 
 void panic(T...)(T form) {
-    addToBuffer("Panic:");
+    addToBuffer("Panic: ");
     format(form);
     addToBuffer("\nThe system will now proceed to die");
     sync(KMessagePriority.Error);
@@ -43,7 +44,9 @@ private void format(T...)(T items) {
     }
 }
 
-private immutable CONVERSION_TABLE = "0123456789abcdef";
+private void addToBuffer(ubyte add) {
+    addToBuffer(cast(size_t)add);
+}
 
 private void addToBuffer(char add) {
     buffer[bufferIndex++] = add;
@@ -53,6 +56,10 @@ private void addToBuffer(string add) {
     foreach (c; add) {
         addToBuffer(c);
     }
+}
+
+private void addToBuffer(void* addr) {
+    addToBuffer(cast(size_t)addr);
 }
 
 private void addToBuffer(size_t x) {
@@ -81,8 +88,21 @@ private void sync(KMessagePriority priority) {
     bufferIndex = 0;
 
     if (servicesUp) {
-        kmessageQueue.sendMessageSync(KMessage(priority, fromCString(buffer.ptr)));
+        auto msg = KMessage(priority, fromCString(buffer.ptr));
+        kmessageQueue.sendMessageSync(msg);
     } else {
+        final switch (priority) {
+            case KMessagePriority.Log:
+                qemuPrint("LOG: ");
+                break;
+            case KMessagePriority.Warn:
+                qemuPrint("WARN: ");
+                break;
+            case KMessagePriority.Error:
+                qemuPrint("ERROR: ");
+                break;
+        }
+
         qemuPrint(fromCString(buffer.ptr));
         qemuPrint("\n");
     }
