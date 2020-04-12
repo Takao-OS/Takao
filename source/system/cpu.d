@@ -141,3 +141,43 @@ extern (C) ubyte inb(ushort port) {
         ret;
     }
 }
+
+extern (C) void outw(ushort port, ushort val) {
+    asm {
+        naked;
+        mov DX, DI;
+        mov AX, SI;
+        out DX, AX;
+        ret;
+    }
+}
+
+extern (C) ushort inw(ushort port) {
+    asm {
+        naked;
+        xor EAX, EAX;
+        mov DX,  DI;
+        in  AX,  DX;
+        ret;
+    }
+}
+
+extern (C) void outd(ushort port, uint val) {
+    asm {
+        naked;
+        mov DX, DI;
+        mov EAX, ESI;
+        out DX, EAX;
+        ret;
+    }
+}
+
+extern (C) uint ind(ushort port) {
+    asm {
+        naked;
+        xor EAX, EAX;
+        mov DX,  DI;
+        in  EAX,  DX;
+        ret;
+    }
+}
