@@ -1,6 +1,7 @@
 module acpi.lib;
 
 import lib.debugging;
+import lib.glue;
 import memory.virtual;
 
 struct RSDP {
@@ -34,7 +35,7 @@ struct SDT {
 private __gshared bool useXSDT;
 private __gshared SDT* sdt;
 
-void initACPI(RSDP *rsdp) {
+void initACPI(RSDP* rsdp) {
     writeln("acpi: RSDP at %x, ACPI revision %u", rsdp, rsdp.rev);
 
     if (rsdp.rev >= 2 && rsdp.xsdtAddr) {
@@ -56,11 +57,13 @@ T* findSDT(T)(string signature, int index) {
 
     for (size_t i = 0; i < limit; i++) {
         if (useXSDT) {
-            ptr = cast(SDT*)(cast(size_t)(cast(ulong[])(sdt.sdtPtr))[i] + MEM_PHYS_OFFSET);
+            auto p = cast(ulong*)(&sdt.sdtPtr);
+            ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         } else {
-            ptr = cast(SDT*)(cast(size_t)(cast(uint[])(sdt.sdtPtr))[i] + MEM_PHYS_OFFSET);
+            auto p = cast(uint*)(&sdt.sdtPtr);
+            ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         }
-        if (ptr.signature == signature) {
+        if (!memcmp(cast(void*)ptr.signature, cast(void*)signature, 4)) {
             if (count++ == index) {
                 writeln("acpi: Found \"%s\" at %x", cast(char*)signature, ptr);
                 return cast(T*)ptr;
