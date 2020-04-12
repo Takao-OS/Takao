@@ -9,13 +9,13 @@ import lib.alloc;
 
 uint lapicRead(uint reg) {
     auto madt = getMADTEntries();
-    size_t lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
+    auto lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
     return volatileLoad(cast(uint*)(lapicBase + reg));
 }
 
 void lapicWrite(uint reg, uint data) {
     auto madt = getMADTEntries();
-    size_t lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
+    auto lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
     volatileStore(cast(uint*)(lapicBase + reg), data);
 }
 
@@ -128,6 +128,6 @@ void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool stat
 
 void initAPIC() {
     auto madt = getMADTEntries();
-    size_t lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
+    auto lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
     log("apic: Done! APIC initialised.");
 }

@@ -8,6 +8,7 @@ import lib.glue;
 T* newObj(T, A...)(A args) {
     auto size = divRoundUp(T.sizeof, PAGE_SIZE);
     auto ptr  = cast(T*)(pmmAllocAndZero(size) + MEM_PHYS_OFFSET);
+    assert(ptr != null);
 
     static if (__traits(compiles, ptr.__ctor(args))) {
         ptr.__ctor(args);
@@ -19,6 +20,7 @@ T* newObj(T, A...)(A args) {
 void delObj(T)(T* object) {
     auto size = divRoundUp(T.sizeof, PAGE_SIZE);
     auto ptr  = cast(void*)object - MEM_PHYS_OFFSET;
+    assert(ptr != null);
 
     static if (__traits(compiles, object.__dtor())) {
         object.__dtor();
@@ -34,18 +36,13 @@ struct ArrayAllocMetadata {
 
 size_t getArraySize(void* ptr) {
     auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
-
     return meta.count;
 }
 
 T* newArray(T)(size_t count = 0) {
     auto pageCount = divRoundUp(T.sizeof * count, PAGE_SIZE);
-
-    void* ptr = pmmAllocAndZero(pageCount + 1);
-
-    if (ptr == null) {
-        return null;
-    }
+    auto ptr = pmmAllocAndZero(pageCount + 1);
+    assert(ptr != null);
 
     ptr += MEM_PHYS_OFFSET;
 
