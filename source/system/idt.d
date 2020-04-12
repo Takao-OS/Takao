@@ -1,10 +1,10 @@
 module system.idt;
 
 import system.gdt;
-import system.pic;
 import scheduler.thread;
 import system.cpu;
 import system.exceptions;
+import system.apic;
 
 private align(1) struct IDTDescriptor {
     align(1):
@@ -96,9 +96,7 @@ extern (C) void pitHandler() {
         push R15;
 
         mov RDI, RSP;
-        mov DX, MASTERPIC_COMMAND;
-        mov AL, PIC_EOI;
-        out DX, AL;
+        call lapicEOI;
         call reschedule;
 
         pop R15;

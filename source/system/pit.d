@@ -1,6 +1,7 @@
-module cpu.pit;
+module system.pit;
 
 import system.cpu;
+import system.apic;
 
 private immutable ushort pitFrequency = 1000;
 
@@ -14,4 +15,8 @@ void initPIT() {
 
     outb(0x40, l);
     outb(0x40, h);
+}
+
+void enablePIT() {
+    ioAPICSetUpLegacyIRQ(0, 0, true);
 }

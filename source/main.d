@@ -12,6 +12,8 @@ import scheduler.thread;
 import services.kmessage;
 import services.terminal;
 import acpi.lib;
+import system.apic;
+import system.cpu;
 
 __gshared bool servicesUp;
 
@@ -21,17 +23,24 @@ extern (C) void main(Stivale* stivale) {
 
     log("Initialising low level structures and devices.");
     initGDT();
-    initPIT();
-    initPIC();
     initIDT();
+    initPIC();
 
     log("Initialising memory management and GC");
     initPhysicalAllocator(stivale.memmap);
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
+    initCPULocals();
+    initCPU(0, 0);
+
     log("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
+
+    initAPIC();
+
+    initPIT();
+    enablePIT();
 
     log("Spawning main thread");
     spawnThread(&mainThread, stivale);

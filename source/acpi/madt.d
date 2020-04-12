@@ -61,6 +61,7 @@ private __gshared MADTnmi**       madtNMIs;
 private __gshared bool madtInitialised = false;
 
 struct MADTEntries {
+    MADT*           madt;
     MADTlocalApic** localApics;
     MADTioApic**    ioApics;
     MADTiso**       ISOs;
@@ -74,6 +75,7 @@ MADTEntries getMADTEntries() {
         initMADT();
     }
 
+    ret.madt       = madt;
     ret.localApics = madtLocalApics;
     ret.ioApics    = madtIoApics;
     ret.ISOs       = madtISOs;

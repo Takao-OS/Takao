@@ -1,5 +1,7 @@
 module system.cpu;
 
+import lib.alloc;
+
 align(16) struct TSS {
     align(1):
     uint  unused0;
@@ -18,13 +20,29 @@ align(16) struct TSS {
     uint  iopbOffset;
 }
 
+struct CPULocal {
+    byte lapicID;
+}
+
+__gshared CPULocal* cpuLocals;
+
 size_t currentCPU() {
     return readMSR(0xc0000101);
 }
 
-void initCPU(size_t cpuNumber) {
+void initCPULocals() {
+    cpuLocals = newArray!CPULocal();
+}
+
+void initCPU(size_t cpuNumber, byte lapicID) {
     // Write CPU number to gsbase
     writeMSR(0xc0000101, cpuNumber);
+
+    if (getArraySize(cpuLocals) <= cpuNumber) {
+        resizeArray(&cpuLocals, cpuNumber);
+    }
+
+    cpuLocals[cpuNumber].lapicID = lapicID;
 
     // Enable SSE/SSE2 without checking because this is x86_64
     ulong cr0 = readCR0();
