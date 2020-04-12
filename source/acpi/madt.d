@@ -3,6 +3,7 @@ module acpi.madt;
 import acpi.lib;
 import lib.messages;
 import lib.alloc;
+import lib.list;
 
 struct MADT {
     align(1):
@@ -52,20 +53,20 @@ struct MADTnmi {
     ubyte      lint;
 }
 
-private __gshared MADT*           madt;
-private __gshared MADTlocalApic** madtLocalApics;
-private __gshared MADTioApic**    madtIoApics;
-private __gshared MADTiso**       madtISOs;
-private __gshared MADTnmi**       madtNMIs;
+private __gshared MADT*                 madt;
+private __gshared List!(MADTlocalApic*) madtLocalApics;
+private __gshared List!(MADTioApic*)    madtIoApics;
+private __gshared List!(MADTiso*)       madtISOs;
+private __gshared List!(MADTnmi*)       madtNMIs;
 
 private __gshared bool madtInitialised = false;
 
 struct MADTEntries {
-    MADT*           madt;
-    MADTlocalApic** localApics;
-    MADTioApic**    ioApics;
-    MADTiso**       ISOs;
-    MADTnmi**       NMIs;
+    MADT*                  madt;
+    List!(MADTlocalApic*)* localApics;
+    List!(MADTioApic*)*    ioApics;
+    List!(MADTiso*)*       ISOs;
+    List!(MADTnmi*)*       NMIs;
 }
 
 MADTEntries getMADTEntries() {
@@ -76,10 +77,10 @@ MADTEntries getMADTEntries() {
     }
 
     ret.madt       = madt;
-    ret.localApics = madtLocalApics;
-    ret.ioApics    = madtIoApics;
-    ret.ISOs       = madtISOs;
-    ret.NMIs       = madtNMIs;
+    ret.localApics = &madtLocalApics;
+    ret.ioApics    = &madtIoApics;
+    ret.ISOs       = &madtISOs;
+    ret.NMIs       = &madtNMIs;
 
     return ret;
 }
@@ -87,49 +88,36 @@ MADTEntries getMADTEntries() {
 private void initMADT() {
     madt = findSDT!MADT("APIC", 0);
 
-    // search for MADT table
     if (madt == null) {
         panic("No MADT found");
     }
 
-    madtLocalApics = newArray!(MADTlocalApic*)();
-    madtIoApics    = newArray!(MADTioApic*)();
-    madtISOs       = newArray!(MADTiso*)();
-    madtNMIs       = newArray!(MADTnmi*)();
+    madtLocalApics = List!(MADTlocalApic*)(16);
+    madtIoApics    = List!(MADTioApic*)(16);
+    madtISOs       = List!(MADTiso*)(16);
+    madtNMIs       = List!(MADTnmi*)(16);
 
     // parse the MADT entries
-    for (ubyte *madtPtr = cast(ubyte*)(&madt.madtEntriesBegin);
-         cast(size_t)madtPtr < cast(size_t)madt + madt.sdt.length;
-         madtPtr += *(madtPtr + 1)) {
+    for (auto madtPtr = cast(ubyte*)(&madt.madtEntriesBegin);
+        cast(size_t)madtPtr < cast(size_t)madt + madt.sdt.length;
+        madtPtr += *(madtPtr + 1)) {
         switch (*(madtPtr)) {
-            case 0: {
-                size_t i = getArraySize(madtLocalApics);
-                log("acpi/madt: Found local APIC #", i);
-                resizeArray(&madtLocalApics, +1);
-                madtLocalApics[i] = cast(MADTlocalApic*)madtPtr;
+            case 0:
+                log("acpi/madt: Found local APIC #", madtLocalApics.length);
+                madtLocalApics.push(cast(MADTlocalApic*)madtPtr);
                 break;
-            }
-            case 1: {
-                size_t i = getArraySize(madtIoApics);
-                log("acpi/madt: Found I/O APIC #", i);
-                resizeArray(&madtIoApics, +1);
-                madtIoApics[i] = cast(MADTioApic*)madtPtr;
+            case 1:
+                log("acpi/madt: Found I/O APIC #", madtIoApics.length);
+                madtIoApics.push(cast(MADTioApic*)madtPtr);
                 break;
-            }
-            case 2: {
-                size_t i = getArraySize(madtISOs);
-                log("acpi/madt: Found ISO #", i);
-                resizeArray(&madtISOs, +1);
-                madtISOs[i] = cast(MADTiso*)madtPtr;
+            case 2:
+                log("acpi/madt: Found ISO #", madtISOs.length);
+                madtISOs.push(cast(MADTiso*)madtPtr);
                 break;
-            }
-            case 4: {
-                size_t i = getArraySize(madtNMIs);
-                log("acpi/madt: Found NMI #", i);
-                resizeArray(&madtNMIs, +1);
-                madtNMIs[i] = cast(MADTnmi*)madtPtr;
+            case 4:
+                log("acpi/madt: Found NMI #", madtNMIs.length);
+                madtNMIs.push(cast(MADTnmi*)madtPtr);
                 break;
-            }
             default:
                 break;
         }

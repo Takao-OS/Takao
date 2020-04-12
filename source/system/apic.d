@@ -38,8 +38,8 @@ void lapicSetNMI(ubyte vec, ushort flags, ubyte lint) {
 }
 
 void lapicInstallNMI(ubyte vec, int nmi) {
-    auto madt = getMADTEntries();
-    lapicSetNMI(vec, madt.NMIs[nmi].flags, madt.NMIs[nmi].lint);
+    auto nmis = *(getMADTEntries().NMIs);
+    lapicSetNMI(vec, nmis[nmi].flags, nmis[nmi].lint);
 }
 
 void lapicEnable() {
@@ -56,29 +56,31 @@ void lapicSendIPI(int cpu, ubyte vector) {
 }
 
 uint ioAPICRead(size_t ioAPIC, uint reg) {
-    auto madt = getMADTEntries();
-    uint* base = cast(uint*)(cast(size_t)madt.ioApics[ioAPIC].addr + MEM_PHYS_OFFSET);
+    auto ioAPICs = *(getMADTEntries().ioApics);
+    uint* base = cast(uint*)(cast(size_t)ioAPICs[ioAPIC].addr + MEM_PHYS_OFFSET);
     volatileStore(base, reg);
     return volatileLoad(base + 4);
 }
 
 void ioAPICWrite(size_t ioAPIC, uint reg, uint data) {
-    auto madt = getMADTEntries();
-    auto base = cast(uint*)(cast(size_t)madt.ioApics[ioAPIC].addr + MEM_PHYS_OFFSET);
+    auto ioAPICs = *(getMADTEntries().ioApics);
+    auto base = cast(uint*)(cast(size_t)ioAPICs[ioAPIC].addr + MEM_PHYS_OFFSET);
     volatileStore(base,     reg);
     volatileStore(base + 4, data);
 }
 
 
 void ioAPICSetUpLegacyIRQ(int cpu, ubyte irq, bool status) {
-    auto madt = getMADTEntries();
-    foreach (size_t i; 0..getArraySize(madt.ISOs)) {
-        if (madt.ISOs[i].irqSource == irq) {
-            ioAPICConnectGSIToVec(cpu, cast(ubyte)(madt.ISOs[i].irqSource + 0x20),
-                                  madt.ISOs[i].gsi, madt.ISOs[i].flags, status);
+    auto isos = *(getMADTEntries().ISOs);
+
+    foreach (size_t i; 0..isos.length) {
+        if (isos[i].irqSource == irq) {
+            ioAPICConnectGSIToVec(cpu, cast(ubyte)(isos[i].irqSource + 0x20),
+                                  isos[i].gsi, isos[i].flags, status);
             return;
         }
     }
+
     ioAPICConnectGSIToVec(cpu, cast(ubyte)(irq + 0x20), cast(uint)irq,
                           cast(short)0, status);
 }
@@ -88,9 +90,10 @@ uint ioAPICGetMaxRedirect(size_t ioAPIC) {
 }
 
 size_t ioAPICFromGSI(uint gsi) {
-    auto madt = getMADTEntries();
-    foreach (size_t i; 0..getArraySize(madt.ioApics)) {
-        if (madt.ioApics[i].gsib <= gsi && madt.ioApics[i].gsib + ioAPICGetMaxRedirect(i) > gsi)
+    auto ioAPICs = *(getMADTEntries().ioApics);
+
+    foreach (size_t i; 0..ioAPICs.length) {
+        if (ioAPICs[i].gsib <= gsi && ioAPICs[i].gsib + ioAPICGetMaxRedirect(i) > gsi)
             return i;
     }
 
@@ -98,8 +101,8 @@ size_t ioAPICFromGSI(uint gsi) {
 }
 
 void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool status) {
-    auto madt = getMADTEntries();
-    size_t ioAPIC = ioAPICFromGSI(gsi);
+    auto ioAPICs = *(getMADTEntries().ioApics);
+    auto ioAPIC  = ioAPICFromGSI(gsi);
 
     long redirect = vec;
 
@@ -120,7 +123,7 @@ void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool stat
 
     /* Set target APIC ID */
     redirect |= (cast(ulong)cpuLocals[cpu].lapicID) << 56;
-    uint ioredtbl = (gsi - madt.ioApics[ioAPIC].gsib) * 2 + 16;
+    uint ioredtbl = (gsi - ioAPICs[ioAPIC].gsib) * 2 + 16;
 
     ioAPICWrite(ioAPIC, ioredtbl + 0, cast(uint)redirect);
     ioAPICWrite(ioAPIC, ioredtbl + 1, cast(uint)(redirect >> 32));
@@ -129,8 +132,8 @@ void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool stat
 extern (C) __gshared uint* lapicEOIptr;
 
 void initAPIC() {
-    auto madt = getMADTEntries();
-    auto lapicBase = cast(size_t)madt.madt.localControllerAddr + MEM_PHYS_OFFSET;
+    auto madt = getMADTEntries().madt;
+    auto lapicBase = cast(size_t)madt.localControllerAddr + MEM_PHYS_OFFSET;
     lapicEOIptr = cast(uint*)(lapicBase + 0xb0);
     lapicEnable();
     log("apic: Done! APIC initialised.");
