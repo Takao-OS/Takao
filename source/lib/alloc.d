@@ -32,15 +32,14 @@ struct ArrayAllocMetadata {
     size_t count;
 }
 
-size_t getArraySize(T)(T* ptr) {
+size_t getArraySize(void* ptr) {
     auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
 
     return meta.count;
 }
 
 T* newArray(T)(size_t count = 0) {
-    auto size      = T.sizeof * count;
-    auto pageCount = divRoundUp(size, PAGE_SIZE);
+    auto pageCount = divRoundUp(T.sizeof * count, PAGE_SIZE);
 
     void* ptr = pmmAllocAndZero(pageCount + 1);
 
@@ -59,8 +58,8 @@ T* newArray(T)(size_t count = 0) {
     return cast(T*)ptr;
 }
 
-T* resizeArray(T)(T* oldPtr, long diff) {
-    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
+int resizeArray(T)(T** oldPtr, long diff) {
+    auto meta = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - PAGE_SIZE);
 
     size_t newCount;
 
@@ -73,26 +72,26 @@ T* resizeArray(T)(T* oldPtr, long diff) {
     return resizeArrayAbs(oldPtr, newCount);
 }
 
-T* resizeArrayAbs(T)(T* oldPtr, size_t newCount) {
-    auto size      = T.sizeof * newCount;
-    auto pageCount = divRoundUp(size, PAGE_SIZE);
-    auto meta      = cast(ArrayAllocMetadata*)(oldPtr - PAGE_SIZE);
+int resizeArrayAbs(T)(T** oldPtr, size_t newCount) {
+    auto pageCount = divRoundUp(T.sizeof * newCount, PAGE_SIZE);
+    auto meta      = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - PAGE_SIZE);
 
     if (meta.pages == pageCount) {
         meta.count = newCount;
-        return oldPtr;
+        return 0;
     } else if (meta.pages > pageCount) {
-        auto ptr = cast(void*)oldPtr;
+        auto ptr = cast(void*)*oldPtr;
         ptr += (pageCount * PAGE_SIZE) - MEM_PHYS_OFFSET;
         pmmFree(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
         meta.count = newCount;
-        return oldPtr;
-    } else if (meta.pages < pageCount) {
+        return 0;
+    } else /* if (meta.pages < pageCount) */ {
         auto ptr = newArray!T(newCount);
-        memcpy(ptr, oldPtr, meta.pages * PAGE_SIZE);
-        delArray(oldPtr);
-        return ptr;
+        memcpy(ptr, *oldPtr, meta.pages * PAGE_SIZE);
+        delArray(*oldPtr);
+        *oldPtr = ptr;
+        return 0;
     }
 }
 
