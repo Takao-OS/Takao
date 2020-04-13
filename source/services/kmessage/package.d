@@ -4,11 +4,12 @@ import scheduler.thread;
 import lib.bus;
 import lib.messages;
 import services.terminal;
+import system.cpu;
 
-private immutable CCYAN    = "\033[36m";
-private immutable CMAGENTA = "\033[35m";
-private immutable CRED     = "\033[31m";
-private immutable CRESET   = "\033[0m";
+private immutable colorCyan    = "\033[36m";
+private immutable colorMagenta = "\033[35m";
+private immutable colorRed     = "\033[31m";
+private immutable colorReset   = "\033[0m";
 
 enum KMessagePriority {
     Log,
@@ -31,18 +32,18 @@ void kmessageService(void* unused) {
 
         final switch (msg.message.priority) {
             case KMessagePriority.Log:
-                printMessage(CCYAN);
+                printMessage(colorCyan);
                 break;
             case KMessagePriority.Warn:
-                printMessage(CMAGENTA);
+                printMessage(colorMagenta);
                 break;
             case KMessagePriority.Error:
-                printMessage(CRED);
+                printMessage(colorRed);
                 break;
         }
 
         printMessage(">> ");
-        printMessage(CRESET);
+        printMessage(colorReset);
         printMessage(msg.message.contents);
         printMessage("\n");
 
@@ -53,10 +54,7 @@ void kmessageService(void* unused) {
 private void printMessage(string msg) {
     foreach (c; msg) {
         // Qemu.
-        asm {
-            mov AL,   c;
-            out 0xE9, AL;
-        }
+        outb(0xe9, c);
     }
 
     // Terminal.
