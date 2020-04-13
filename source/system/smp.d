@@ -7,18 +7,25 @@ import lib.messages;
 import system.cpu;
 import memory.physical;
 import system.pit;
+import core.atomic;
 
 __gshared size_t cpuCount = 1;
 
-private immutable size_t cpuStackSize      = 32768;
+private immutable size_t cpuStackSize = 32768;
 
-extern extern (C) bool   smpCheckAPFlag();
+private __gshared bool apStarted = false;
+
 extern extern (C) size_t smpPrepareTrampoline(void*  entryPoint,
                                               void*  stackPtr,
-                                              size_t cpuNumber);
+                                              size_t cpuNumber,
+                                              ubyte  lapicID);
 
-private void apEntryPoint(size_t cpuNumber) {
+private extern (C) void apEntryPoint(size_t cpuNumber, ubyte lapicID) {
     log("smp: Started AP #", cpuNumber);
+
+    initCPU(cpuNumber, lapicID);
+
+    atomicStore(apStarted, true);
     for (;;) {
         asm {
             cli;
@@ -27,11 +34,9 @@ private void apEntryPoint(size_t cpuNumber) {
     }
 }
 
-private int startAP(ubyte lapicID, size_t cpuNumber) {
-    initCPULocal(cpuNumber, lapicID);
-
+private int startAP(size_t cpuNumber, ubyte lapicID) {
     auto stack      = newArray!ubyte(cpuStackSize);
-    auto trampoline = smpPrepareTrampoline(&apEntryPoint, stack, cpuNumber);
+    auto trampoline = smpPrepareTrampoline(&apEntryPoint, stack, cpuNumber, lapicID);
 
     /* Send the INIT IPI */
     lapicWrite(0x310, cast(uint)lapicID << 24);
@@ -44,8 +49,10 @@ private int startAP(ubyte lapicID, size_t cpuNumber) {
 
     for (int i = 0; i < 1000; i++) {
         sleep(1);
-        if (smpCheckAPFlag())
+        if (atomicLoad(apStarted)) {
+            atomicStore(apStarted, false);
             return 0;
+        }
     }
     return -1;
 }
@@ -61,7 +68,7 @@ void initSMP() {
 
         log("smp: Starting up AP #", i);
 
-        if (startAP(localApics[i].apicID, cpuCount)) {
+        if (startAP(cpuCount, localApics[i].apicID)) {
             warn("smp: Failed to start AP #", i);
             continue;
         }

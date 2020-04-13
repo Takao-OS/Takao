@@ -3,7 +3,7 @@ section .text
 %define HIGHER_HALF_OFFSET 0xffff800000000000
 %define TRAMPOLINE_ADDR    0x1000
 
-%define CPU_STARTED_FLAG 0x2000
+%define LAPIC_ID         0x2000
 %define ENTRY_POINT_ADDR 0x2008
 %define PAGEMAP_PTR      0x2010
 %define STACK_PTR        0x2018
@@ -12,36 +12,29 @@ section .text
 %define GDT_PTR          0x2040
 %define IDT_PTR          0x2050
 
-global smpCheckAPFlag
-smpCheckAPFlag:
-    xor  eax, eax
-    mov  rcx, CPU_STARTED_FLAG + HIGHER_HALF_OFFSET
-    lock xchg [rcx], rax
-    ret
-
 global smpPrepareTrampoline
-smpPrepareTrampoline: ; (entryPoint, stackPtr, cpuNumber)
-    xor  rax, rax
-    mov  rcx, CPU_STARTED_FLAG + HIGHER_HALF_OFFSET
-    lock xchg [rcx], rax
-    mov  rcx, ENTRY_POINT_ADDR + HIGHER_HALF_OFFSET
-    mov  [rcx], rdi
+smpPrepareTrampoline: ; (entryPoint, stackPtr, cpuNumber, lapicID)
+    mov  r8, ENTRY_POINT_ADDR + HIGHER_HALF_OFFSET
+    mov  [r8], rdi
+    mov  r8, STACK_PTR        + HIGHER_HALF_OFFSET
+    mov  [r8], rsi
+    mov  r8, CPU_NUMBER       + HIGHER_HALF_OFFSET
+    mov  [r8], rdx
+    mov  r8, LAPIC_ID         + HIGHER_HALF_OFFSET
+    mov  [r8], rcx
+
     mov  rax, cr3
-    mov  rcx, PAGEMAP_PTR      + HIGHER_HALF_OFFSET
-    mov  [rcx], rax
-    mov  rcx, STACK_PTR        + HIGHER_HALF_OFFSET
-    mov  [rcx], rsi
-    mov  rcx, CPU_NUMBER       + HIGHER_HALF_OFFSET
-    mov  [rcx], rdx
-    mov  rcx, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET
-    sgdt [rcx]
+    mov  r8, PAGEMAP_PTR      + HIGHER_HALF_OFFSET
+    mov  [r8], rax
+    mov  r8, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET
+    sgdt [r8]
     mov  rax, HIGHER_HALF_OFFSET
-    mov  rcx, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET + 2
-    sub  [rcx], rax
-    mov  rcx, GDT_PTR          + HIGHER_HALF_OFFSET
-    sgdt [rcx]
-    mov  rcx, IDT_PTR          + HIGHER_HALF_OFFSET
-    sidt [rcx]
+    mov  r8, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET + 2
+    sub  [r8], rax
+    mov  r8, GDT_PTR          + HIGHER_HALF_OFFSET
+    sgdt [r8]
+    mov  r8, IDT_PTR          + HIGHER_HALF_OFFSET
+    sidt [r8]
 
     mov rdi, TRAMPOLINE_ADDR + HIGHER_HALF_OFFSET
     mov rsi, trampoline
@@ -102,14 +95,12 @@ bits 64
     mov rcx, IDT_PTR + HIGHER_HALF_OFFSET
     lidt [rcx]
 
-    mov rcx, CPU_NUMBER + HIGHER_HALF_OFFSET
+    mov rcx, LAPIC_ID + HIGHER_HALF_OFFSET
     mov rdi, [rcx]
+    mov rcx, CPU_NUMBER + HIGHER_HALF_OFFSET
+    mov rsi, [rcx]
     mov rcx, ENTRY_POINT_ADDR + HIGHER_HALF_OFFSET
     mov rbx, [rcx]
-
-    mov rcx, CPU_STARTED_FLAG + HIGHER_HALF_OFFSET
-    mov eax, 1
-    lock xchg [rcx], rax
 
     call rbx
   .end:

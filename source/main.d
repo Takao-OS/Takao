@@ -34,8 +34,7 @@ extern (C) void main(Stivale* stivale) {
 
     log("Init CPU");
     initCPULocals();
-    initCPULocal(0, 0);
-    initCPU(0);
+    initCPU(0, 0);
 
     log("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));

@@ -4,8 +4,6 @@ import system.cpu;
 import system.apic;
 import core.volatile;
 
-import lib.messages;
-
 private immutable ushort pitFrequency = 1000;
 
 void initPIT() {

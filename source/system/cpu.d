@@ -34,15 +34,13 @@ void initCPULocals() {
     cpuLocals = newArray!CPULocal();
 }
 
-void initCPULocal(size_t cpuNumber, byte lapicID) {
+void initCPU(size_t cpuNumber, byte lapicID) {
     if (getArraySize(cpuLocals) <= cpuNumber) {
         resizeArrayAbs(&cpuLocals, cpuNumber + 1);
     }
 
     cpuLocals[cpuNumber].lapicID = lapicID;
-}
 
-void initCPU(size_t cpuNumber) {
     // Write CPU number to gsbase
     writeMSR(0xc0000101, cpuNumber);
 
