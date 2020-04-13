@@ -1,6 +1,5 @@
 module services.kmessage;
 
-import scheduler.thread;
 import lib.bus;
 import lib.messages;
 import services.terminal;

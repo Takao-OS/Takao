@@ -1,4 +1,4 @@
-module lib.pci;
+module services.pci.pci;
 
 import system.cpu;
 import lib.list;

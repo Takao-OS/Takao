@@ -11,10 +11,10 @@ import lib.messages;
 import scheduler.thread;
 import services.kmessage;
 import services.terminal;
+import services.pci;
 import acpi.lib;
 import system.apic;
 import system.cpu;
-import lib.pci;
 import system.smp;
 
 __gshared bool servicesUp;
@@ -64,9 +64,7 @@ extern (C) void mainThread(Stivale* stivale) {
     servicesUp = true;
     spawnThread(&kmessageService, null);
     spawnThread(&terminalService, &stivale.framebuffer);
-
-    log("Initialising PCI");
-    initPCI();
+    spawnThread(&pciService,      null);
 
     for (;;) {
         dequeueAndYield();
