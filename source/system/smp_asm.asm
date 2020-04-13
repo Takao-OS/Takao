@@ -14,29 +14,20 @@ section .text
 
 global smpPrepareTrampoline
 smpPrepareTrampoline: ; (entryPoint, stackPtr, cpuNumber, lapicID)
-    mov  r8, ENTRY_POINT_ADDR + HIGHER_HALF_OFFSET
-    mov  [r8], rdi
-    mov  r8, STACK_PTR        + HIGHER_HALF_OFFSET
-    mov  [r8], rsi
-    mov  r8, CPU_NUMBER       + HIGHER_HALF_OFFSET
-    mov  [r8], rdx
-    mov  r8, LAPIC_ID         + HIGHER_HALF_OFFSET
-    mov  [r8], rcx
+    mov  [ENTRY_POINT_ADDR], rdi
+    mov  [STACK_PTR],        rsi
+    mov  [CPU_NUMBER],       rdx
+    mov  [LAPIC_ID],         rcx
 
     mov  rax, cr3
-    mov  r8, PAGEMAP_PTR      + HIGHER_HALF_OFFSET
-    mov  [r8], rax
-    mov  r8, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET
-    sgdt [r8]
+    mov  [PAGEMAP_PTR], rax
+    sgdt [GDT_PTR_LOWER]
     mov  rax, HIGHER_HALF_OFFSET
-    mov  r8, GDT_PTR_LOWER    + HIGHER_HALF_OFFSET + 2
-    sub  [r8], rax
-    mov  r8, GDT_PTR          + HIGHER_HALF_OFFSET
-    sgdt [r8]
-    mov  r8, IDT_PTR          + HIGHER_HALF_OFFSET
-    sidt [r8]
+    sub  [GDT_PTR_LOWER+2], rax
+    sgdt [GDT_PTR]
+    sidt [IDT_PTR]
 
-    mov rdi, TRAMPOLINE_ADDR + HIGHER_HALF_OFFSET
+    mov rdi, TRAMPOLINE_ADDR
     mov rsi, trampoline
     mov rcx, trampoline.end - trampoline
     rep movsb
@@ -79,7 +70,7 @@ trampoline:
     mov cr0, eax
 
     jmp 0x08:0x1050    ; 0x1050 is the address of the next instruction
-bits 64
+  bits 64
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -87,20 +78,13 @@ bits 64
     mov gs, ax
     mov ss, ax
 
-    mov rcx, STACK_PTR + HIGHER_HALF_OFFSET
-    mov rsp, [rcx]
+    mov rsp, [STACK_PTR]
 
-    mov rcx, GDT_PTR + HIGHER_HALF_OFFSET
-    lgdt [rcx]
-    mov rcx, IDT_PTR + HIGHER_HALF_OFFSET
-    lidt [rcx]
+    lgdt [GDT_PTR]
+    lidt [IDT_PTR]
 
-    mov rcx, LAPIC_ID + HIGHER_HALF_OFFSET
-    mov rdi, [rcx]
-    mov rcx, CPU_NUMBER + HIGHER_HALF_OFFSET
-    mov rsi, [rcx]
-    mov rcx, ENTRY_POINT_ADDR + HIGHER_HALF_OFFSET
-    mov rbx, [rcx]
+    mov rdi, [CPU_NUMBER]
+    mov rsi, [LAPIC_ID]
 
-    call rbx
+    call [ENTRY_POINT_ADDR]
   .end:
