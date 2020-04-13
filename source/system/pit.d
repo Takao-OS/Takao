@@ -2,6 +2,9 @@ module system.pit;
 
 import system.cpu;
 import system.apic;
+import core.volatile;
+
+import lib.messages;
 
 private immutable ushort pitFrequency = 1000;
 
@@ -19,4 +22,15 @@ void initPIT() {
 
 void enablePIT() {
     ioAPICSetUpLegacyIRQ(0, 0, true);
+}
+
+private __gshared size_t globalTicks;
+
+extern (C) void tickHandler() {
+    globalTicks++;
+}
+
+void sleep(size_t ticks) {
+    size_t target = volatileLoad(&globalTicks) + ticks;
+    while (volatileLoad(&globalTicks) < target) {}
 }

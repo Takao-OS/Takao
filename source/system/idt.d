@@ -5,6 +5,7 @@ import scheduler.thread;
 import system.cpu;
 import system.exceptions;
 import system.apic;
+import system.pit;
 
 private align(1) struct IDTDescriptor {
     align(1):
@@ -95,9 +96,9 @@ extern (C) void pitHandler() {
         push R14;
         push R15;
 
+        call lapicEOI;
+        call tickHandler;
         mov RDI, RSP;
-        mov RAX, lapicEOIptr;
-        mov [RAX], 0;
         call reschedule;
 
         pop R15;

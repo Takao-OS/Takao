@@ -7,10 +7,10 @@ import lib.list;
 
 struct MADT {
     align(1):
-    SDT     sdt;
-    uint    localControllerAddr;
-    uint    flags;
-    void*[] madtEntriesBegin;
+    SDTHeader header;
+    uint      localControllerAddr;
+    uint      flags;
+    void*[]   madtEntriesBegin;
 }
 
 struct MADTheader {
@@ -99,8 +99,8 @@ private void initMADT() {
 
     // parse the MADT entries
     for (auto madtPtr = cast(ubyte*)(&madt.madtEntriesBegin);
-        cast(size_t)madtPtr < cast(size_t)madt + madt.sdt.length;
-        madtPtr += *(madtPtr + 1)) {
+         cast(size_t)madtPtr < cast(size_t)madt + madt.header.length;
+         madtPtr += *(madtPtr + 1)) {
         switch (*(madtPtr)) {
             case 0:
                 log("acpi/madt: Found local APIC #", madtLocalApics.length);

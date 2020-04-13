@@ -34,15 +34,17 @@ void initCPULocals() {
     cpuLocals = newArray!CPULocal();
 }
 
-void initCPU(size_t cpuNumber, byte lapicID) {
-    // Write CPU number to gsbase
-    writeMSR(0xc0000101, cpuNumber);
-
+void initCPULocal(size_t cpuNumber, byte lapicID) {
     if (getArraySize(cpuLocals) <= cpuNumber) {
-        resizeArray(&cpuLocals, cpuNumber + 1);
+        resizeArrayAbs(&cpuLocals, cpuNumber + 1);
     }
 
     cpuLocals[cpuNumber].lapicID = lapicID;
+}
+
+void initCPU(size_t cpuNumber) {
+    // Write CPU number to gsbase
+    writeMSR(0xc0000101, cpuNumber);
 
     // Enable SSE/SSE2 without checking because this is x86_64
     ulong cr0 = readCR0();

@@ -19,7 +19,7 @@ struct RSDP {
     ubyte[3] reserved;
 }
 
-struct SDT {
+struct SDTHeader {
     align(1):
     char[4] signature;
     uint    length;
@@ -30,7 +30,11 @@ struct SDT {
     uint    oemRev;
     uint    creatorID;
     uint    creatorRev;
-    void*[] sdtPtr;
+}
+
+struct SDT {
+    SDTHeader header;
+    void*[]   sdtPtr;
 }
 
 private __gshared bool useXSDT;
@@ -51,18 +55,18 @@ void initACPI(RSDP* rsdp) {
 }
 
 T* findSDT(T)(string signature, int index) {
-    SDT* ptr;
-    int  count = 0;
+    SDTHeader* ptr;
+    int        count = 0;
 
-    size_t limit = (sdt.length - SDT.sizeof) / (useXSDT ? 8 : 4);
+    size_t limit = (sdt.header.length - SDT.sizeof) / (useXSDT ? 8 : 4);
 
     for (size_t i = 0; i < limit; i++) {
         if (useXSDT) {
             auto p = cast(ulong*)(&sdt.sdtPtr);
-            ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
+            ptr = cast(SDTHeader*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         } else {
             auto p = cast(uint*)(&sdt.sdtPtr);
-            ptr = cast(SDT*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
+            ptr = cast(SDTHeader*)((cast(void*)p[i]) + MEM_PHYS_OFFSET);
         }
 
         if (fromCString(cast(char*)ptr.signature, 4) == signature) {

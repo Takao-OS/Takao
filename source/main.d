@@ -15,6 +15,7 @@ import acpi.lib;
 import system.apic;
 import system.cpu;
 import lib.pci;
+import system.smp;
 
 __gshared bool servicesUp;
 
@@ -33,7 +34,8 @@ extern (C) void main(Stivale* stivale) {
 
     log("Init CPU");
     initCPULocals();
-    initCPU(0, 0);
+    initCPULocal(0, 0);
+    initCPU(0);
 
     log("Initialising ACPI");
     initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
@@ -44,9 +46,16 @@ extern (C) void main(Stivale* stivale) {
     initPIT();
     enablePIT();
 
+    disableScheduler();
+
+    asm { sti; }
+
+    initSMP();
+
     log("Spawning main thread");
     spawnThread(&mainThread, stivale);
-    asm { sti; }
+
+    enableScheduler();
 
     for (;;) asm { hlt; }
 }

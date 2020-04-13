@@ -47,7 +47,7 @@ void lapicEnable() {
 }
 
 void lapicEOI() {
-    lapicWrite(0xb0, 0);
+    *lapicEOIptr = 0;
 }
 
 void lapicSendIPI(int cpu, ubyte vector) {
@@ -129,7 +129,7 @@ void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool stat
     ioAPICWrite(ioAPIC, ioredtbl + 1, cast(uint)(redirect >> 32));
 }
 
-extern (C) __gshared uint* lapicEOIptr;
+private __gshared uint* lapicEOIptr;
 
 void initAPIC() {
     auto madt = getMADTEntries().madt;

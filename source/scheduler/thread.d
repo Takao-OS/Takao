@@ -15,15 +15,27 @@ struct Thread {
     Registers regs;
 }
 
-private __gshared Lock        lock;
 __gshared         int         currentThread = -1;
+
+private __gshared Lock        schedulerEnableLock;
+private __gshared Lock        schedulerLock;
 private __gshared Thread*[32] runningQueue;
 private __gshared Thread[64]  threadPool;
 
+void disableScheduler() {
+    schedulerEnableLock.acquire();
+}
+
+void enableScheduler() {
+    schedulerEnableLock.release();
+}
+
 extern (C) void reschedule(Registers* regs) {
-    if (!lock.acquireOrFail()) {
+    if (!schedulerEnableLock.acquireOrFail()) {
         return;
     }
+
+    schedulerLock.acquire();
 
     if (currentThread != -1) {
         threadPool[currentThread].regs = *regs;
@@ -33,13 +45,15 @@ extern (C) void reschedule(Registers* regs) {
     }
 
     if (currentThread == -1) {
-        lock.release();
+        schedulerLock.release();
+        schedulerEnableLock.release();
         for (;;) {
-            asm { hlt; }
+            asm { sti; hlt; }
         }
     }
 
-    lock.release();
+    schedulerLock.release();
+    schedulerEnableLock.release();
     loadThread(&(threadPool[currentThread].regs));
 }
 
@@ -68,7 +82,7 @@ private extern (C) void loadThread(Registers* regs) {
 }
 
 void dequeueAndYield() {
-    lock.acquire();
+    schedulerLock.acquire();
 
     // We don't wanna be interrupted
     asm { cli; }
@@ -78,7 +92,7 @@ void dequeueAndYield() {
 
     threadPool[currentThread].isRunning = false;
 
-    lock.release();
+    schedulerLock.release();
 
     yield();
 }
@@ -137,7 +151,7 @@ private int getNextThread(int baseQueueIndex) {
 }
 
 int spawnThread(T)(void* entry, T arg) {
-    lock.acquire();
+    schedulerLock.acquire();
 
     auto id     = getFreeThread();
     auto thread = &threadPool[id];
@@ -151,7 +165,7 @@ int spawnThread(T)(void* entry, T arg) {
     thread.present     = true;
     thread.id          = id;
 
-    lock.release();
+    schedulerLock.release();
 
     queueThread(id);
 
@@ -182,30 +196,30 @@ private int innerQueueThread(int thread) {
 }
 
 int queueThreadOrWait(int thread) {
-    lock.acquire();
+    schedulerLock.acquire();
 
     while (threadPool[thread].isRunning) {
-        lock.release();
+        schedulerLock.release();
         yield();
-        lock.acquire();
+        schedulerLock.acquire();
     }
 
     auto ret = innerQueueThread(thread);
 
-    lock.release();
+    schedulerLock.release();
     return ret;
 }
 
 int queueThread(int thread) {
-    lock.acquire();
+    schedulerLock.acquire();
 
     if (threadPool[thread].isRunning) {
-        lock.release();
+        schedulerLock.release();
         return 0;
     }
 
     auto ret = innerQueueThread(thread);
 
-    lock.release();
+    schedulerLock.release();
     return ret;
 }

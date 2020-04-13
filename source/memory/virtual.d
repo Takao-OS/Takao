@@ -51,6 +51,7 @@ struct AddressSpace {
 
         // Map anything from 0 to 4 GiB starting from MEM_PHYS_OFFSET.
         for (size_t i = 0; i < 0x100000000; i += PAGE_SIZE) {
+            this.mapPage(i, i, 0x03);
             this.mapPage(i, MEM_PHYS_OFFSET + i, 0x03);
         }
 
