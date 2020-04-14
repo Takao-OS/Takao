@@ -30,7 +30,7 @@ ASMSOURCE := $(shell find ${SOURCEDIR} -type f -name '*.asm')
 OBJ       := $(DSOURCE:.d=.o) $(ASMSOURCE:.asm=.o)
 
 # Where the fun begins!
-.PHONY: all submodules hdd test clean distclean
+.PHONY: all hdd test clean distclean
 
 all: ${KERNEL}
 
@@ -48,7 +48,7 @@ ${KERNEL}: ${OBJ}
 
 hdd: ${IMAGE}
 
-${IMAGE}: submodules ${KERNEL}
+${IMAGE}: qloader2 ${KERNEL}
 	@dd if=/dev/zero bs=1M count=0 seek=64 of=${IMAGE}
 	@parted -s ${IMAGE} mklabel msdos
 	@parted -s ${IMAGE} mkpart primary 1 100%
@@ -57,8 +57,8 @@ ${IMAGE}: submodules ${KERNEL}
 	@echfs-utils -m -p0 ${IMAGE} import ${BUILDDIR}/qloader2.cfg qloader2.cfg
 	@qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
 
-submodules:
-	@git submodule update --init
+qloader2:
+	@git clone https://github.com/qword-os/qloader2.git
 
 test: hdd
 	@${QEMU} ${QEMUHARDFLAGS} -hda ${IMAGE}
