@@ -2,10 +2,10 @@ module services.terminal.font;
 
 // Generated from terminus font by converting it into a bitmap and using
 // xxd -i.
-immutable FONT_HEIGHT = 16;
-immutable FONT_WIDTH  = 8;
+immutable fontHeight = 16;
+immutable fontWidth  = 8;
 
-private __gshared ubyte[] FONT = [
+private __gshared ubyte[] font = [
   0xaa, 0x00, 0x80, 0x00, 0x80, 0x4a, 0xea, 0x5a, 0xc9, 0x00, 0x80, 0x00,
   0x80, 0x00, 0x80, 0x55, 0xaa, 0x00, 0x80, 0x00, 0x80, 0x39, 0xc2, 0x32,
   0x8a, 0x71, 0x80, 0x00, 0x80, 0x00, 0x80, 0x55, 0xaa, 0x00, 0x80, 0x00,
@@ -351,8 +351,8 @@ private __gshared ubyte[] FONT = [
 ];
 
 ubyte[] getFontCharacter(char c) {
-    auto charSize = ((FONT_WIDTH * FONT_HEIGHT) / 8);
+    auto charSize = ((fontWidth * fontHeight) / 8);
     auto index    = charSize * c;
     auto end      = index + charSize;
-    return FONT[index..end];
+    return font[index..end];
 }
