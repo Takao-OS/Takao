@@ -32,9 +32,10 @@ struct SDTHeader {
     uint    creatorRev;
 }
 
-struct SDT {
+private struct SDT {
+    align(1):
     SDTHeader header;
-    void*[]   sdtPtr;
+    void*     sdtPtr;
 }
 
 private __gshared bool useXSDT;
@@ -58,7 +59,7 @@ T* findSDT(T)(string signature, int index) {
     SDTHeader* ptr;
     int        count = 0;
 
-    size_t limit = (sdt.header.length - SDT.sizeof) / (useXSDT ? 8 : 4);
+    size_t limit = (sdt.header.length - sdt.header.sizeof) / (useXSDT ? 8 : 4);
 
     for (size_t i = 0; i < limit; i++) {
         if (useXSDT) {
