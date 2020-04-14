@@ -1,4 +1,0 @@
-[submodule "qloader2"]
-	path = qloader2
-	url = https://github.com/qword-os/qloader2.git
-	branch = master
