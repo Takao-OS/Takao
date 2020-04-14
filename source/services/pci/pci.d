@@ -129,7 +129,7 @@ struct PciDevice {
     }
 }
 
-private __gshared List!PciDevice pciDevices;
+private __gshared List!(PciDevice)* pciDevices;
 private __gshared size_t numDevices;
 
 static void pciCheckFunction(ubyte bus, ubyte slot, ubyte func, long parent) {
@@ -167,7 +167,7 @@ static void pciCheckFunction(ubyte bus, ubyte slot, ubyte func, long parent) {
 
     if (device.deviceClass == 0x06 && device.subclass == 0x04) {
         // pci to pci bridge
-        PciDevice bridgeDevice = pciDevices[id];
+        PciDevice bridgeDevice = (*pciDevices)[id];
 
         // find devices attached to this bridge
         uint config18 = bridgeDevice.readDword(0x18);
@@ -204,12 +204,12 @@ void pciScan() {
 
 void initPCI() {
     log("pci: starting scan");
-    pciDevices = List!PciDevice(1);
+    pciDevices = newObj!(List!PciDevice)(1);
     pciScan();
     pciDevices.shrinkToFit();
 
     for (int i = 0; i < numDevices; i++) {
-        PciDevice dev = pciDevices[i];
+        PciDevice dev = (*pciDevices)[i];
         log("bus: ", dev.bus, " device: ", dev.device, " function: ", dev.func, " vendor id: ", dev.vendorId, " device id: ", dev.deviceId);
         log("bars: ");
         for (int j = 0; j < 5; j++) {

@@ -21,9 +21,8 @@ struct List(T) {
         if (elementCount >= size) {
             grow();
         }
-        size_t idx = elementCount;
-        storage[elementCount++] = elem;
-        return idx;
+        storage[elementCount] = elem;
+        return elementCount++;
     }
 
     void pop() {
@@ -32,22 +31,21 @@ struct List(T) {
         }
     }
 
-    void shrinkToFit() {
-        resizeArrayAbs!T(&storage, elementCount * T.sizeof);
-        size = elementCount;
+    T opIndex(size_t i) {
+        return storage[i];
     }
 
-    ref T opIndex(size_t i) {
-        return storage[i];
+    void shrinkToFit() {
+        resizeArrayAbs!T(&storage, elementCount);
+        size = elementCount;
     }
 
     private void grow() {
         resizeArrayAbs!T(&storage, size * 2);
-        size = size * 2;
+        size *= 2;
     }
 
     ~this() {
         delArray(storage);
     }
 }
-

@@ -53,11 +53,11 @@ struct MADTnmi {
     ubyte      lint;
 }
 
-private __gshared MADT*                 madt;
-private __gshared List!(MADTlocalApic*) madtLocalApics;
-private __gshared List!(MADTioApic*)    madtIoApics;
-private __gshared List!(MADTiso*)       madtISOs;
-private __gshared List!(MADTnmi*)       madtNMIs;
+private __gshared MADT*                  madt;
+private __gshared List!(MADTlocalApic*)* madtLocalApics;
+private __gshared List!(MADTioApic*)*    madtIoApics;
+private __gshared List!(MADTiso*)*       madtISOs;
+private __gshared List!(MADTnmi*)*       madtNMIs;
 
 private __gshared bool madtInitialised = false;
 
@@ -77,10 +77,10 @@ MADTEntries getMADTEntries() {
     }
 
     ret.madt       = madt;
-    ret.localApics = &madtLocalApics;
-    ret.ioApics    = &madtIoApics;
-    ret.ISOs       = &madtISOs;
-    ret.NMIs       = &madtNMIs;
+    ret.localApics = madtLocalApics;
+    ret.ioApics    = madtIoApics;
+    ret.ISOs       = madtISOs;
+    ret.NMIs       = madtNMIs;
 
     return ret;
 }
@@ -92,10 +92,10 @@ private void initMADT() {
         panic("No MADT found");
     }
 
-    madtLocalApics = List!(MADTlocalApic*)(16);
-    madtIoApics    = List!(MADTioApic*)(16);
-    madtISOs       = List!(MADTiso*)(16);
-    madtNMIs       = List!(MADTnmi*)(16);
+    madtLocalApics = newObj!(List!(MADTlocalApic*))(16);
+    madtIoApics    = newObj!(List!(MADTioApic*))(16);
+    madtISOs       = newObj!(List!(MADTiso*))(16);
+    madtNMIs       = newObj!(List!(MADTnmi*))(16);
 
     // parse the MADT entries
     for (auto madtPtr = cast(ubyte*)(&madt.madtEntriesBegin);

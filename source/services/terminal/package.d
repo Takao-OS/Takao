@@ -12,10 +12,10 @@ struct TerminalMessage {
 
 __gshared MessageQueue!TerminalMessage terminalQueue;
 private __gshared bool isInit;
-private __gshared TTY  tty;
+private __gshared TTY* tty;
 
 void terminalEarlyInit(StivaleFramebuffer fb) {
-    tty = TTY(fb);
+    tty = newObj!TTY(fb);
     tty.clear();
     isInit = true;
 }
