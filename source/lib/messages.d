@@ -1,6 +1,7 @@
 module lib.messages;
 
 import services.kmessage;
+import services.terminal;
 import main;
 import system.cpu;
 import lib.string;
@@ -93,22 +94,23 @@ private void sync(KMessagePriority priority) {
     } else {
         final switch (priority) {
             case KMessagePriority.Log:
-                qemuPrint("LOG: ");
+                print("LOG: ");
                 break;
             case KMessagePriority.Warn:
-                qemuPrint("WARN: ");
+                print("WARN: ");
                 break;
             case KMessagePriority.Error:
-                qemuPrint("ERROR: ");
+                print("ERROR: ");
                 break;
         }
 
-        qemuPrint(fromCString(buffer.ptr));
-        qemuPrint("\n");
+        print(fromCString(buffer.ptr));
+        print("\n");
     }
 }
 
-private void qemuPrint(string str) {
+private void print(string str) {
+    terminalPrint(str);
     foreach (c; str) {
         outb(0xe9, c);
     }

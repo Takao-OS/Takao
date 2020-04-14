@@ -11,17 +11,28 @@ struct TerminalMessage {
 }
 
 __gshared MessageQueue!TerminalMessage terminalQueue;
+private __gshared bool isInit;
+private __gshared TTY  tty;
+
+void terminalEarlyInit(StivaleFramebuffer fb) {
+    tty = TTY(fb);
+    tty.clear();
+    isInit = true;
+}
+
+void terminalPrint(string str) {
+    if (isInit) {
+        tty.print(str);
+    }
+}
 
 void terminalService(StivaleFramebuffer* fb) {
-    auto tty = TTY(*fb);
-    tty.clear();
-
     // FIXME: Not a log() because that breaks the messaging system quite hard.
-    tty.print("Started Terminal service\n");
+    terminalPrint("Started Terminal service\n");
 
     while (true) {
         auto msg = terminalQueue.receiveMessage();
-        tty.print(msg.message.contents);
+        terminalPrint(msg.message.contents);
         terminalQueue.messageProcessed(msg);
     }
 }

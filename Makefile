@@ -67,4 +67,4 @@ clean:
 	@rm -rf ${OBJ} ${KERNEL} ${IMAGE}
 
 distclean: clean
-	@git submodule foreach sh -c 'rm -rf ..?* .[!.]* *'
+	@rm -rf qloader2

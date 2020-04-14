@@ -32,6 +32,8 @@ extern (C) void main(Stivale* stivale) {
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
 
+    terminalEarlyInit(stivale.framebuffer);
+
     log("Init CPU");
     initCPULocals();
     initCPU(0, 0);
@@ -63,7 +65,7 @@ extern (C) void mainThread(Stivale* stivale) {
     log("Spawning services, switching to kmessage");
     servicesUp = true;
     spawnThread(&kmessageService, null);
-    spawnThread(&terminalService, &stivale.framebuffer);
+    spawnThread(&terminalService, null);
     spawnThread(&pciService,      null);
 
     for (;;) {
