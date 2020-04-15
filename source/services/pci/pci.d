@@ -12,7 +12,7 @@ private immutable uint MAX_DEVICE = 32;
 private immutable uint MAX_BUS = 256;
 
 
-struct PciBar {
+struct PCIBar {
     size_t base;
     size_t size;
 
@@ -20,7 +20,7 @@ struct PciBar {
     int isPrefetchable;
 }
 
-struct PciDevice {
+struct PCIDevice {
     long parent;
 
     ubyte bus;
@@ -76,7 +76,7 @@ struct PciDevice {
     }
 
     bool barPresent(int bar) {
-        PciBar ret;
+        PCIBar ret;
         assert(bar <= 5);
 
         uint regIndex = 0x10 + bar * 4;
@@ -90,8 +90,8 @@ struct PciDevice {
         return true;
     }
 
-    PciBar getBar(int bar) {
-        PciBar ret;
+    PCIBar getBar(int bar) {
+        PCIBar ret;
         assert(bar <= 5);
 
         uint regIndex = 0x10 + bar * 4;
@@ -129,11 +129,11 @@ struct PciDevice {
     }
 }
 
-private __gshared List!(PciDevice)* pciDevices;
+__gshared List!(PCIDevice)* pciDevices;
 private __gshared size_t numDevices;
 
 static void pciCheckFunction(ubyte bus, ubyte slot, ubyte func, long parent) {
-    PciDevice device = {0};
+    PCIDevice device = {0};
     device.bus = bus;
     device.func = func;
     device.device = slot;
@@ -167,7 +167,7 @@ static void pciCheckFunction(ubyte bus, ubyte slot, ubyte func, long parent) {
 
     if (device.deviceClass == 0x06 && device.subclass == 0x04) {
         // pci to pci bridge
-        PciDevice bridgeDevice = (*pciDevices)[id];
+        PCIDevice bridgeDevice = (*pciDevices)[id];
 
         // find devices attached to this bridge
         uint config18 = bridgeDevice.readDword(0x18);
@@ -184,7 +184,7 @@ static void pciCheckBus(ubyte bus, long parent) {
 }
 
 void pciScan() {
-    PciDevice newDev;
+    PCIDevice newDev;
     uint configC = newDev.readDword(0xc);
     uint config0;
 
@@ -204,12 +204,12 @@ void pciScan() {
 
 void initPCI() {
     log("pci: starting scan");
-    pciDevices = newObj!(List!PciDevice)(1);
+    pciDevices = newObj!(List!PCIDevice)(1);
     pciScan();
     pciDevices.shrinkToFit();
 
     for (int i = 0; i < numDevices; i++) {
-        PciDevice dev = (*pciDevices)[i];
+        PCIDevice dev = (*pciDevices)[i];
         log("bus: ", dev.bus, " device: ", dev.device, " function: ", dev.func, " vendor id: ", dev.vendorId, " device id: ", dev.deviceId);
         log("bars: ");
         for (int j = 0; j < 5; j++) {

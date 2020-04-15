@@ -12,6 +12,7 @@ import scheduler.thread;
 import services.kmessage;
 import services.terminal;
 import services.pci;
+import services.storage;
 import acpi.lib;
 import system.apic;
 import system.cpu;
@@ -65,8 +66,9 @@ extern (C) void mainThread(Stivale* stivale) {
     log("Spawning services, switching to kmessage");
     servicesUp = true;
     spawnThread(&kmessageService, null);
-    spawnThread(&terminalService, null);
     spawnThread(&pciService,      null);
+    spawnThread(&storageService,  null);
+    spawnThread(&terminalService, null);
 
     for (;;) {
         dequeueAndYield();
