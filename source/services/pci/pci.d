@@ -1,44 +1,47 @@
 module services.pci.pci;
 
 import system.cpu;
-import lib.list;
-import lib.alloc;
-import services.kmessage;
-import services.terminal;
-import lib.messages;
-
-private immutable uint MAX_FUNCTION = 8;
-private immutable uint MAX_DEVICE = 32;
-private immutable uint MAX_BUS = 256;
-
 
 struct PCIBar {
     size_t base;
     size_t size;
-
-    int isMmio;
-    int isPrefetchable;
+    bool   isMmio;
+    bool   isPrefetchable;
 }
 
 struct PCIDevice {
-    long parent;
-
-    ubyte bus;
-    ubyte func;
-    ubyte device;
+    long   parent;
+    ubyte  bus;
+    ubyte  func;
+    ubyte  device;
     ushort deviceId;
     ushort vendorId;
-    ubyte revId;
-    ubyte subclass;
-    ubyte deviceClass;
-    ubyte progIf;
-    int multifunction;
-    ubyte irqPin;
+    ubyte  revId;
+    ubyte  subclass;
+    ubyte  deviceClass;
+    ubyte  progIf;
+    bool   multifunction;
+    ubyte  irqPin;
 
-    private void getAddress(uint offset) {
-        uint address = (this.bus << 16) | (this.device << 11) | (this.func << 8)
-            | (offset & ~(cast(uint)(3))) | 0x80000000;
-        outd(0xcf8, address);
+    this(ubyte bus, ubyte slot, ubyte func, long parent) {
+        this.parent = parent;
+        this.bus    = bus;
+        this.func   = func;
+        this.device = slot;
+
+        auto config0  = readDword(0);
+        auto config8  = readDword(0x8);
+        auto configc  = readDword(0xc);
+        auto config3c = readDword(0x3c);
+
+        deviceId      = cast(ushort)(config0 >> 16);
+        vendorId      = cast(ushort)config0;
+        revId         = cast(ubyte)config8;
+        subclass      = cast(ubyte)(config8 >> 16);
+        deviceClass   = cast(ubyte)(config8 >> 24);
+        progIf        = cast(ubyte)(config8 >> 8);
+        multifunction = configc & 0x800000 ? true : false;
+        irqPin        = cast(ubyte)(config3c >> 8);
     }
 
     ubyte readByte(uint offset) {
@@ -76,147 +79,57 @@ struct PCIDevice {
     }
 
     bool barPresent(int bar) {
-        PCIBar ret;
         assert(bar <= 5);
-
-        uint regIndex = 0x10 + bar * 4;
-        uint barLow = this.readDword(regIndex);
-        ulong barSizeLow;
-        uint barHigh = 0;
-        ulong barSizeHigh = 0;
-
-        if (!barLow)
-            return false;
-        return true;
+        auto regIndex = 0x10 + bar * 4;
+        return readDword(regIndex) ? true : false;
     }
 
     PCIBar getBar(int bar) {
-        PCIBar ret;
         assert(bar <= 5);
 
-        uint regIndex = 0x10 + bar * 4;
-        uint barLow = this.readDword(regIndex);
-        ulong barSizeLow;
-        uint barHigh = 0;
-        ulong barSizeHigh = 0;
+        auto regIndex      = 0x10 + bar * 4;
+        auto barLow        = readDword(regIndex);
+        auto barSizeLow    = readDword(regIndex);
+        auto barHigh       = 0;
+        size_t barSizeHigh = 0;
 
-        ret.isMmio = !(barLow & 1);
-        int isPrefetchable = ret.isMmio && barLow & (1 << 3);
-        int is64bit = ret.isMmio && ((barLow >> 1) & 0b11) == 0b10;
-
-        if (is64bit)
-            barHigh = this.readDword(regIndex + 4);
-
-        ret.base = ((cast(ulong)barHigh << 32) | barLow) & ~(ret.isMmio ? (0b1111) : (0b11));
-
-        this.writeDword(regIndex, 0xFFFFFFFF);
-        barSizeLow = cast(ulong)this.readDword(regIndex);
-        this.writeDword(regIndex, barLow);
+        bool isMmio         = !(barLow & 1);
+        bool isPrefetchable = isMmio && barLow & (1 << 3);
+        bool is64bit        = isMmio && ((barLow >> 1) & 0b11) == 0b10;
 
         if (is64bit) {
-            this.writeDword(regIndex + 4, 0xFFFFFFFF);
-            barSizeHigh = cast(ulong)this.readDword(regIndex + 4);
-            this.writeDword(regIndex + 4, barHigh);
+            barHigh = readDword(regIndex + 4);
+        }
+
+        size_t base = ((cast(ulong)barHigh << 32) | barLow) & ~(isMmio ? (0b1111) : (0b11));
+
+        writeDword(regIndex, 0xFFFFFFFF);
+        barSizeLow = readDword(regIndex);
+        writeDword(regIndex, barLow);
+
+        if (is64bit) {
+            writeDword(regIndex + 4, 0xFFFFFFFF);
+            barSizeHigh = readDword(regIndex + 4);
+            writeDword(regIndex + 4, barHigh);
         } else {
             barSizeHigh = 0xFFFFFFFF;
         }
 
-        size_t size = ((barSizeHigh << 32) | barSizeLow) & ~(ret.isMmio ? (0b1111) : (0b11));
+        size_t size = ((barSizeHigh << 32) | barSizeLow) & ~(isMmio ? 0b1111 : 0b11);
         size = ~size + 1;
-        ret.size = size;
 
-        return ret;
-    }
-}
-
-__gshared List!(PCIDevice)* pciDevices;
-private __gshared size_t numDevices;
-
-static void pciCheckFunction(ubyte bus, ubyte slot, ubyte func, long parent) {
-    PCIDevice device = {0};
-    device.bus = bus;
-    device.func = func;
-    device.device = slot;
-
-    uint config0 = device.readDword(0);
-
-    if (config0 == 0xffffffff) {
-        return;
+        return PCIBar(base, size, isMmio, isPrefetchable);
     }
 
-    uint config8 = device.readDword(0x8);
-    uint configc = device.readDword(0xc);
-    uint config3c = device.readDword(0x3c);
-
-    device.parent = parent;
-    device.deviceId = cast(ushort)(config0 >> 16);
-    device.vendorId = cast(ushort)config0;
-    device.revId = cast(ubyte)config8;
-    device.subclass = cast(ubyte)(config8 >> 16);
-    device.deviceClass = cast(ubyte)(config8 >> 24);
-    device.progIf = cast(ubyte)(config8 >> 8);
-    device.irqPin = cast(ubyte)(config3c >> 8);
-
-    if (configc & 0x800000)
-        device.multifunction = 1;
-    else
-        device.multifunction = 0;
-
-    size_t id = pciDevices.push(device);
-    numDevices++;
-
-    if (device.deviceClass == 0x06 && device.subclass == 0x04) {
-        // pci to pci bridge
-        PCIDevice bridgeDevice = (*pciDevices)[id];
-
-        // find devices attached to this bridge
-        uint config18 = bridgeDevice.readDword(0x18);
-        pciCheckBus((config18 >> 8) & 0xFF, id);
-    }
-}
-
-static void pciCheckBus(ubyte bus, long parent) {
-    for (ubyte dev = 0; dev < MAX_DEVICE; dev++) {
-        for (ubyte func = 0; func < MAX_FUNCTION; func++) {
-            pciCheckFunction(bus, dev, func, parent);
+    void enableBusMastering() {
+        if (readDword(0x4) & (1 << 2)) {
+            writeDword(0x04, readDword(0x4) | (1 << 2));
         }
     }
-}
 
-void pciScan() {
-    PCIDevice newDev;
-    uint configC = newDev.readDword(0xc);
-    uint config0;
-
-    if (!(configC & 0x800000)) {
-        pciCheckBus(0, -1);
-    } else {
-        for (ubyte func = 0; func < 8; func++) {
-            newDev.func = func;
-            config0 = newDev.readDword(0);
-
-            if (config0 == 0xffffffff)
-                continue;
-            pciCheckBus(func, -1);
-        }
-    }
-}
-
-void initPCI() {
-    log("pci: starting scan");
-    pciDevices = newObj!(List!PCIDevice)(1);
-    pciScan();
-    pciDevices.shrinkToFit();
-
-    for (int i = 0; i < numDevices; i++) {
-        PCIDevice dev = (*pciDevices)[i];
-        log("bus: ", dev.bus, " device: ", dev.device, " function: ", dev.func, " vendor id: ", dev.vendorId, " device id: ", dev.deviceId);
-        log("bars: ");
-        for (int j = 0; j < 5; j++) {
-            if (dev.barPresent(j)) {
-                auto bar = dev.getBar(j);
-                log("bar ", j, " base: ", bar.base, " len: ", bar.size);
-            }
-        }
+    private void getAddress(uint offset) {
+        uint address = (bus << 16) | (device << 11) | (func << 8)
+            | (offset & ~(cast(uint)(3))) | 0x80000000;
+        outd(0xcf8, address);
     }
 }
