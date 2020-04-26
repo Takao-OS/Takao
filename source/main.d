@@ -1,6 +1,6 @@
 module main;
 
-import lib.stivale;
+import stivale;
 import system.gdt;
 import system.idt;
 import system.pic;

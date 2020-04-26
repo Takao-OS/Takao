@@ -2,7 +2,7 @@ module services.terminal.tty;
 
 import memory.virtual;
 import lib.alloc;
-import lib.stivale;
+import stivale;
 import lib.bit;
 import services.terminal.font;
 import services.terminal.framebuffer;

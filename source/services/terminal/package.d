@@ -1,7 +1,7 @@
 module services.terminal;
 
 import scheduler.thread;
-import lib.stivale;
+import stivale;
 import lib.alloc;
 import lib.bus;
 import services.terminal.tty;

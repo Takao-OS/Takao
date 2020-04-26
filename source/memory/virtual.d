@@ -3,7 +3,7 @@ module memory.virtual;
 import system.cpu;
 import memory.physical;
 import lib.lock;
-import lib.stivale;
+import stivale;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
 immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000;

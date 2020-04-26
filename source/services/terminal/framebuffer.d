@@ -1,7 +1,7 @@
 module services.terminal.framebuffer;
 
 import memory.virtual;
-import lib.stivale;
+import stivale;
 import lib.alloc;
 
 alias Colour = uint;

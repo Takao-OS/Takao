@@ -1,6 +1,6 @@
 module memory.physical;
 
-import lib.stivale;
+import stivale;
 import memory.virtual;
 import lib.lock;
 import lib.alignment;
