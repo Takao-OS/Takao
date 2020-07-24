@@ -58,7 +58,7 @@ ${IMAGE}: qloader2 ${KERNEL}
 	@qloader2/qloader2-install qloader2/qloader2.bin ${IMAGE}
 
 qloader2:
-	@git clone --branch v0.2.3 https://github.com/qword-os/qloader2.git
+	@git clone https://github.com/qword-os/qloader2.git
 
 test: hdd
 	@${QEMU} ${QEMUHARDFLAGS} -hda ${IMAGE}

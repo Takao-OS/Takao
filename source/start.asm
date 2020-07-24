@@ -6,6 +6,7 @@ header:
     dw 0         ; fb_width, 0 is default
     dw 0         ; fb_height, ditto
     dw 0         ; fb_bpp, ditto
+    dq 0         ; entry
 
 section .bss
 
