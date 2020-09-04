@@ -110,7 +110,6 @@ private void sync(KMessagePriority priority) {
 }
 
 private void print(string str) {
-    terminalPrint(str);
     foreach (c; str) {
         outb(0xe9, c);
     }

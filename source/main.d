@@ -28,12 +28,10 @@ extern (C) void main(Stivale* stivale) {
     initGDT();
     initIDT();
 
-    log("Initialising memory management and GC");
+    log("Initialising memory management");
     initPhysicalAllocator(stivale.memmap);
     auto as = AddressSpace(stivale.memmap);
     as.setActive();
-
-    terminalEarlyInit(stivale.framebuffer);
 
     log("Init CPU");
     initCPULocals();
@@ -64,11 +62,11 @@ extern (C) void main(Stivale* stivale) {
 
 extern (C) void mainThread(Stivale* stivale) {
     log("Spawning services, switching to kmessage");
-    servicesUp = true;
     spawnThread(&kmessageService, null);
     spawnThread(&pciService,      null);
     spawnThread(&storageService,  null);
-    spawnThread(&terminalService, null);
+    spawnThread(&terminalService, &stivale.framebuffer);
+    servicesUp = true;
 
     for (;;) {
         dequeueAndYield();

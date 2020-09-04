@@ -11,28 +11,23 @@ struct TerminalMessage {
 }
 
 __gshared MessageQueue!TerminalMessage terminalQueue;
-private __gshared bool isInit;
-private __gshared TTY* tty;
 
-void terminalEarlyInit(StivaleFramebuffer fb) {
-    tty = newObj!TTY(fb);
-    tty.clear();
-    isInit = true;
-}
-
-void terminalPrint(string str) {
-    if (isInit) {
-        tty.print(str);
+private void printMessage(string msg) {
+import system.cpu;
+    foreach (c; msg) {
+        // Qemu.
+        outb(0xe9, c);
     }
 }
 
 void terminalService(StivaleFramebuffer* fb) {
-    // FIXME: Not a log() because that breaks the messaging system quite hard.
-    terminalPrint("Started Terminal service\n");
+    auto tty = newObj!TTY(*fb);
+    tty.clear();
+    tty.print("Started Terminal service\n");
 
     while (true) {
         auto msg = terminalQueue.receiveMessage();
-        terminalPrint(msg.message.contents);
+        tty.print(msg.message.contents);
         terminalQueue.messageProcessed(msg);
     }
 }
