@@ -58,11 +58,11 @@ $(IMAGE): $(LIMINEDIR) $(KERNEL)
 	@echfs-utils -m -p0 $(IMAGE) quick-format 32768
 	@echfs-utils -m -p0 $(IMAGE) import $(KERNEL) $(KERNEL)
 	@echfs-utils -m -p0 $(IMAGE) import $(BUILDDIR)/limine.cfg limine.cfg
-	@make -C $(LIMINEDIR)
-	@$(LIMINEDIR)/limine-install $(IMAGE)
+	@make -C $(LIMINEDIR) limine-install
+	@$(LIMINEDIR)/limine-install $(LIMINEDIR)/limine.bin $(IMAGE)
 
 $(LIMINEDIR):
-	@git clone --depth=1 --branch=v0.4 $(LIMINEURL) $(LIMINEDIR)
+	@git clone --depth=1 --branch=v0.6.4 $(LIMINEURL) $(LIMINEDIR)
 
 test: hdd
 	@$(QEMU) $(QEMUHARDFLAGS) -hda $(IMAGE)
