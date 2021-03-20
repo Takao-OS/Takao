@@ -104,10 +104,10 @@ extern (C) void yield() {
         cli;
 
         mov RAX, RSP;
-        push DATA_SEGMENT;
+        push kernelDataSegment;
         push RAX;
         push 0x202;
-        push CODE_SEGMENT;
+        push kernelCodeSegment;
         lea RAX, L2;
         push RAX;
         push RAX;
@@ -159,8 +159,8 @@ int spawnThread(T)(void* entry, T arg) {
     thread.regs.rsp    = cast(size_t)(pmmAllocAndZero(1) + PAGE_SIZE + MEM_PHYS_OFFSET);
     thread.regs.rip    = cast(size_t)entry;
     thread.regs.rdi    = cast(size_t)arg;
-    thread.regs.cs     = CODE_SEGMENT;
-    thread.regs.ss     = DATA_SEGMENT;
+    thread.regs.cs     = kernelCodeSegment;
+    thread.regs.ss     = kernelDataSegment;
     thread.regs.rflags = 0x202;
     thread.present     = true;
     thread.id          = id;

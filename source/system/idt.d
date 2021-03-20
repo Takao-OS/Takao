@@ -1,11 +1,5 @@
+/// Management of the IDT.
 module system.idt;
-
-import system.gdt;
-import scheduler.thread;
-import system.cpu;
-import system.exceptions;
-import system.apic;
-import system.pit;
 
 private align(1) struct IDTDescriptor {
     align(1):
@@ -18,22 +12,20 @@ private align(1) struct IDTDescriptor {
     uint   reserved;
 }
 
-struct IDTPointer {
+private struct IDTPointer {
     align(1):
-    ushort size;
-    void*  offset;
+    ushort         size;
+    IDTDescriptor* address;
 }
 
-private __gshared IDTDescriptor[256] idtEntries;
-private __gshared IDTPointer         idtPointer;
+private shared IDTDescriptor[256] idtEntries;
+private shared IDTPointer         idtPointer;
 
+/// Initializes the global IDT and loads it for the callee core.
 void initIDT() {
-    asm {
-        cli;
-    }
+    import system.exceptions; // All of them really.
 
-    idtPointer = IDTPointer(idtEntries.sizeof - 1, cast(void*)&idtEntries);
-
+    // Fill up exceptions.
     addInterrupt(0x00, &excDiv0Handler, 0);
     addInterrupt(0x01, &excDebugHandler, 0);
     addInterrupt(0x02, &excNmiHandler, 0);
@@ -55,20 +47,32 @@ void initIDT() {
     addInterrupt(0x14, &excVirtHandler, 0);
     addInterrupt(0x1e, &excSecurityHandler, 0);
 
+    // Fill up the ISRs.
     addInterrupt(0x20, &pitHandler, 0);
 
+    // Load the IDT pointer.
+    idtPointer.size    = idtEntries.sizeof - 1;
+    idtPointer.address = idtEntries.ptr;
+    loadIDT();
+}
+
+/// Load the global IDT in the callee core, which should be already initialized.
+/// This function does not enable nor disable interrupts.
+void loadIDT() {
     asm {
         lidt [idtPointer];
     }
 }
 
-private alias extern (C) void function() Handler;
+private alias Handler = extern (C) void function();
 
 private void addInterrupt(uint number, Handler handler, ubyte ist) {
-    auto address = cast(size_t)handler;
+    import system.gdt: kernelCodeSegment;
+
+    const address = cast(size_t)handler;
 
     idtEntries[number].offsetLow    = cast(ushort)address;
-    idtEntries[number].selector     = CODE_SEGMENT;
+    idtEntries[number].selector     = kernelCodeSegment;
     idtEntries[number].ist          = ist;
     idtEntries[number].flags        = 0x8E;
     idtEntries[number].offsetMiddle = cast(ushort)(address >> 16);
@@ -76,6 +80,11 @@ private void addInterrupt(uint number, Handler handler, ubyte ist) {
     idtEntries[number].reserved     = 0;
 }
 
+    import scheduler.thread: reschedule;
+    import system.pit:       tickHandler;
+    import system.apic:      lapicEOI;
+
+/// Handler of the PIT.
 extern (C) void pitHandler() {
     asm {
         naked;

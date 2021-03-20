@@ -1,3 +1,4 @@
+/// Utilities and management of the x86 GDT.
 module system.gdt;
 
 private align(1) struct GDTEntry {
@@ -12,16 +13,17 @@ private align(1) struct GDTEntry {
 
 private struct GDTPointer {
     align(1):
-    ushort size;
-    void* address;
+    ushort    size;
+    GDTEntry* address;
 }
 
-immutable CODE_SEGMENT = 0x08; // Second gdt entry.        
-immutable DATA_SEGMENT = 0x10; // Third gdt entry.
+immutable kernelCodeSegment = 0x08; /// Index of the kernel code entry.        
+immutable kernelDataSegment = 0x10; /// Index of the kernel data entry.
 
-private __gshared GDTEntry[3] gdtEntries;
-private __gshared GDTPointer  gdtPointer;
+private shared GDTEntry[3] gdtEntries;
+private shared GDTPointer  gdtPointer;
 
+/// Initialize the global GDT and load it in the callee core.
 void initGDT() {
     // Null descriptor.
     gdtEntries[0].limit       = 0;
@@ -47,25 +49,30 @@ void initGDT() {
     gdtEntries[2].granularity = 0b00000000;
     gdtEntries[2].baseHigh8   = 0;
 
-    // Set GDT Pointer.
-    gdtPointer = GDTPointer(gdtEntries.sizeof - 1, cast(void*)&gdtEntries);
+    // Set GDT Pointer and load.
+    gdtPointer.size    = gdtEntries.sizeof - 1;
+    gdtPointer.address = gdtEntries.ptr;
+    loadGDT();
+}
 
+/// Load an already initialized GDT in the actual core.
+void loadGDT() {
     // Set GDT.
     asm {
         lgdt [gdtPointer];
 
         // Long jump to set cs and ss.
         mov RBX, RSP;
-        push DATA_SEGMENT;
+        push kernelDataSegment;
         push RBX;
         pushfq;
-        push CODE_SEGMENT;
+        push kernelCodeSegment;
         lea RAX, L1; // Putting L1 directly dereferences L1 cause D dum dum.
         push RAX;
         iretq;
 
     L1:;
-        mov AX, DATA_SEGMENT;
+        mov AX, kernelDataSegment;
         mov DS, AX;
         mov ES, AX;
         mov FS, AX;
