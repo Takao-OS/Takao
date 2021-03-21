@@ -8,19 +8,12 @@ A kernel, written in D with tons of love and cat pics.
 
 Make sure you have installed:
 
-* `git`.
 * `ldc`, a LLVM based D compiler.
 * `lld`, the LLVM project linker.
-* `clang`.
+* `nasm`.
 * `make`.
 
-With all of that covered, just clone the source with `git` if you don't
-have it already with:
-
-```bash
-git clone https://github.com/Takao-OS/Takao.git
-cd Takao
-```
-
-To build the kernel, it is enough with a simple `make`, add flags as needed.
+To build the kernel, it is enough with a simple `make`, add flags as needed, for
+a release build its recommended to do `make DFLAGS="-release -O"`, for debug
+builds, `make DFLAGS="-d-debug"`
 To test, run `make test`.

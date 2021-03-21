@@ -1,6 +1,6 @@
 module memory.physical;
 
-import stivale;
+import stivale2;
 import memory.virtual;
 import lib.lock;
 import lib.alignment;
@@ -16,16 +16,19 @@ private __gshared size_t* bitmap;
 private __gshared Lock    pmmLock;
 private __gshared size_t  lastUsedIndex = 0;
 
-void initPhysicalAllocator(StivaleMemmap memmap) {
+void initPhysicalAllocator(Stivale2MemoryMap* memmap) {
+    assert(memmap != null);
+
     allocBase = (cast(size_t)&kernelTop) - KERNEL_PHYS_OFFSET;
 
+    auto mmap = &memmap.memmap;
     foreach (i; 0..memmap.entries) {
-        if (memmap.address[i].type != StivaleMemmapType.Usable) {
+        if (mmap[i].type != Stivale2MemoryType.Usable) {
             continue;
         }
 
-        auto base = alignUp(memmap.address[i].base, PAGE_SIZE);
-        auto size = memmap.address[i].size - (base - memmap.address[i].base);
+        auto base = alignUp(mmap[i].base, PAGE_SIZE);
+        auto size = mmap[i].length - (base - mmap[i].base);
         size      = alignDown(size, PAGE_SIZE);
         auto top  = base + size;
 
@@ -34,13 +37,13 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
                 size -= allocBase - base;
                 base  = allocBase;
             } else {
-                memmap.address[i].type = StivaleMemmapType.Unusable;
+                mmap[i].type = Stivale2MemoryType.BadMemory;
                 continue;
             }
         }
 
-        memmap.address[i].base = base;
-        memmap.address[i].size = size;
+        mmap[i].base = base;
+        mmap[i].length = size;
 
         if (top > highestPage) {
             highestPage = top;
@@ -51,15 +54,15 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
 
     // Find a hole for the stupid bitmap.
     foreach (i; 0..memmap.entries) {
-        if (memmap.address[i].type != StivaleMemmapType.Usable) {
+        if (mmap[i].type != Stivale2MemoryType.Usable) {
             continue;
         }
 
-        if (memmap.address[i].size >= bitmapSize) {
-            bitmap = cast(size_t*)(memmap.address[i].base + MEM_PHYS_OFFSET);
+        if (mmap[i].length >= bitmapSize) {
+            bitmap = cast(size_t*)(mmap[i].base + MEM_PHYS_OFFSET);
 
-            memmap.address[i].size -= bitmapSize;
-            memmap.address[i].base += bitmapSize;
+            mmap[i].length -= bitmapSize;
+            mmap[i].base += bitmapSize;
 
             // Set all bitmap to 1
             foreach (size_t j; 0..(bitmapSize / size_t.sizeof)) {
@@ -72,12 +75,12 @@ void initPhysicalAllocator(StivaleMemmap memmap) {
 
     // Populate the stupid bitmap.
     foreach (i; 0..memmap.entries) {
-        if (memmap.address[i].type != StivaleMemmapType.Usable) {
+        if (mmap[i].type != Stivale2MemoryType.Usable) {
             continue;
         }
 
-        for (size_t j = 0; j < memmap.address[i].size; j += PAGE_SIZE) {
-            size_t page = (memmap.address[i].base + j) / PAGE_SIZE;
+        for (size_t j = 0; j < mmap[i].length; j += PAGE_SIZE) {
+            size_t page = (mmap[i].base + j) / PAGE_SIZE;
             btr(bitmap, page);
         }
     }

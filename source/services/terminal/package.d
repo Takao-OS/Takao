@@ -1,7 +1,7 @@
 module services.terminal;
 
 import scheduler.thread;
-import stivale;
+import stivale2;
 import lib.alloc;
 import lib.bus;
 import services.terminal.tty;
@@ -20,8 +20,10 @@ import system.cpu;
     }
 }
 
-void terminalService(StivaleFramebuffer* fb) {
-    auto tty = newObj!TTY(*fb);
+void terminalService(Stivale2Framebuffer* fb) {
+    assert(fb != null);
+
+    auto tty = newObj!TTY(fb);
     tty.clear();
     tty.print("Started Terminal service\n");
 

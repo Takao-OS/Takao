@@ -1,11 +1,11 @@
 ENTRY(main)
 
 SECTIONS {
-    . = 0xffffffff80100000;
+    . = 0xffffffff80000000 + 2M;
 
     /* Name required by spec. */
-    .stivalehdr : ALIGN(4K) {
-        KEEP(*(.stivalehdr))
+    .stivale2hdr : ALIGN(4K) {
+        KEEP(*(.stivale2hdr))
     }
 
     /* Actual kernel. */

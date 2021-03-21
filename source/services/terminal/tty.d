@@ -2,7 +2,7 @@ module services.terminal.tty;
 
 import memory.virtual;
 import lib.alloc;
-import stivale;
+import stivale2;
 import lib.bit;
 import services.terminal.font;
 import services.terminal.framebuffer;
@@ -35,7 +35,7 @@ struct TTY {
         Colour foreground;
     }
 
-    this(StivaleFramebuffer fb) {
+    this(Stivale2Framebuffer* fb) {
         rows              = fb.height / fontHeight;
         columns           = fb.width  / fontWidth;
         framebuffer       = newObj!Framebuffer(fb);

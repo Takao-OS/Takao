@@ -3,7 +3,7 @@ module memory.virtual;
 import system.cpu;
 import memory.physical;
 import lib.lock;
-import stivale;
+import stivale2;
 
 immutable MEM_PHYS_OFFSET    = 0xffff800000000000;
 immutable KERNEL_PHYS_OFFSET = 0xffffffff80000000;
@@ -46,7 +46,9 @@ struct AddressSpace {
     private Lock    lock;
     private size_t* pml4;
 
-    this(StivaleMemmap memmap) {
+    this(Stivale2MemoryMap* memmap) {
+        assert(memmap != null);
+
         this.pml4 = cast(size_t*)(pmmAllocAndZero(1) + MEM_PHYS_OFFSET);
 
         // Map anything from 0 to 4 GiB starting from MEM_PHYS_OFFSET.
@@ -60,9 +62,10 @@ struct AddressSpace {
         }
 
         // Map according to the memmap.
+        auto mmap = &memmap.memmap;
         for (auto i = 0; i < memmap.entries; i++) {
-            auto base = memmap.address[i].base;
-            auto size = memmap.address[i].size;
+            auto base = mmap[i].base;
+            auto size = mmap[i].length;
 
             size_t alignedBase = base - (base % PAGE_SIZE);
             size_t alignedSize = (size / PAGE_SIZE) * PAGE_SIZE;

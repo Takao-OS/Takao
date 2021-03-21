@@ -1,16 +1,23 @@
-section .stivalehdr
+section .stivale2hdr
 
 header:
-    dq stack.top ; rsp
-    dw 1         ; video mode
-    dw 0         ; fb_width, 0 is default
-    dw 0         ; fb_height, ditto
-    dw 0         ; fb_bpp, ditto
-    dq 0         ; entry
+    dq 0              ; Alternative entrypoint, 0 is none.
+    dq stackTop       ; Stack to be loaded for the kernel.
+    dq 0              ; Flags, we dont need anything in particular.
+    dq framebufferTag ; Start of tags.
+
+section .text
+
+framebufferTag:
+    dq 0x3ecc1bc43d0f7971 ; Identifier of the tag.
+    dq 0                  ; Next in line.
+    dw 0                  ; Prefered width, 0 for default.
+    dw 0                  ; Ditto.
+    dw 0                  ; Ditto.
 
 section .bss
-
 align 16
+
 stack:
     resb 32768
-  .top:
+stackTop:

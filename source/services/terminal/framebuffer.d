@@ -1,7 +1,7 @@
 module services.terminal.framebuffer;
 
 import memory.virtual;
-import stivale;
+import stivale2;
 import lib.alloc;
 
 alias Colour = uint;
@@ -12,7 +12,7 @@ struct Framebuffer {
     private size_t  height;
     private size_t  pitch;
 
-    this(StivaleFramebuffer fb) {
+    this(Stivale2Framebuffer* fb) {
         this.address = cast(Colour*)(fb.address + MEM_PHYS_OFFSET);
         this.width   = fb.width;
         this.height  = fb.height;

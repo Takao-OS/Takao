@@ -1,6 +1,6 @@
 module main;
 
-import stivale;
+import stivale2;
 import system.gdt;
 import system.idt;
 import system.pic;
@@ -20,17 +20,23 @@ import system.smp;
 
 __gshared bool servicesUp;
 
-extern (C) void main(Stivale* stivale) {
+extern (C) void main(Stivale2* stivale) {
     log("Hai~ <3. Doing some preparatives");
-    stivale = cast(Stivale*)(cast(size_t)stivale + MEM_PHYS_OFFSET);
+    stivale = cast(Stivale2*)(cast(size_t)stivale + MEM_PHYS_OFFSET);
+    auto memmap = getStivale2Tag!Stivale2MemoryMap(stivale);
+    auto fb     = getStivale2Tag!Stivale2Framebuffer(stivale);
+    auto rsdp   = getStivale2Tag!Stivale2RSDP(stivale);
+    if (memmap == null || fb == null || rsdp == null) {
+        panic("Stivale2 did not provide all of the needed info");
+    }
 
     log("Initialising low level structures and devices.");
     initGDT();
     initIDT();
 
     log("Initialising memory management");
-    initPhysicalAllocator(stivale.memmap);
-    auto as = AddressSpace(stivale.memmap);
+    initPhysicalAllocator(memmap);
+    auto as = AddressSpace(memmap);
     as.setActive();
 
     log("Init CPU");
@@ -38,7 +44,7 @@ extern (C) void main(Stivale* stivale) {
     initCPU(0, 0);
 
     log("Initialising ACPI");
-    initACPI(cast(RSDP*)(stivale.rsdp + MEM_PHYS_OFFSET));
+    initACPI(cast(RSDP*)(rsdp.rsdp + MEM_PHYS_OFFSET));
 
     log("Initialising interrupt controlling and timer");
     initPIC();
@@ -53,19 +59,19 @@ extern (C) void main(Stivale* stivale) {
     initSMP();
 
     log("Spawning main thread");
-    spawnThread(&mainThread, stivale);
+    spawnThread(&mainThread, fb);
 
     enableScheduler();
 
     for (;;) asm { hlt; }
 }
 
-extern (C) void mainThread(Stivale* stivale) {
+extern (C) void mainThread(Stivale2Framebuffer* fb) {
     log("Spawning services, switching to kmessage");
     spawnThread(&kmessageService, null);
     spawnThread(&pciService,      null);
     spawnThread(&storageService,  null);
-    spawnThread(&terminalService, &stivale.framebuffer);
+    spawnThread(&terminalService, fb);
     servicesUp = true;
 
     for (;;) {
