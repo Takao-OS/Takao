@@ -8,6 +8,7 @@ import system.pit;
 import memory.physical;
 import memory.virtual;
 import lib.messages;
+import lib.panic;
 import scheduler.thread;
 import services.kmessage;
 import services.terminal;

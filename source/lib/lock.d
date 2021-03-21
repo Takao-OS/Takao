@@ -1,16 +1,20 @@
+/// Lock library.
 module lib.lock;
 
-import core.atomic;
+import core.atomic: cas, atomicStore;
 
-private immutable ubyte SPINLOCK_LOCKED   = 1;
-private immutable ubyte SPINLOCK_UNLOCKED = 0;
+private immutable ubyte spinlockLocked   = 1;
+private immutable ubyte spinlockUnlocked = 0;
 
-struct Lock {
+/// Object representing a lock.
+shared struct Lock {
     private shared ubyte status;
 
+    /// Acquire the lock, which will not allow any other user to acquire
+    /// until release.
     void acquire() {
         while (true) {
-            if (cas(&(this.status), SPINLOCK_UNLOCKED, SPINLOCK_LOCKED)) {
+            if (cas(&status, spinlockUnlocked, spinlockLocked)) {
                 return;
             }
 
@@ -18,12 +22,15 @@ struct Lock {
             asm { rep; nop; }
         }
     }
-    
+
+    /// Try to acquire the lock, return `true` if acquired, or return `false`
+    /// if failed.
     bool acquireOrFail() {
-        return cas(&(this.status), SPINLOCK_UNLOCKED, SPINLOCK_LOCKED);
+        return cas(&status, spinlockUnlocked, spinlockLocked);
     }
 
+    /// Set the lock to unlocked.
     void release() {
-        atomicStore(this.status, SPINLOCK_UNLOCKED);
+        atomicStore(status, spinlockUnlocked);
     }
 }

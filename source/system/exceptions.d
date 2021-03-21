@@ -1,7 +1,7 @@
 module system.exceptions;
 
 import system.cpu;
-import lib.messages;
+import lib.panic: panic;
 
 extern extern (C) void excDiv0Handler();
 extern extern (C) void excDebugHandler();

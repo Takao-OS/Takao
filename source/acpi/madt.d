@@ -2,6 +2,7 @@ module acpi.madt;
 
 import acpi.lib;
 import lib.messages;
+import lib.panic: panic;
 import lib.alloc;
 import lib.list;
 
