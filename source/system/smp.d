@@ -3,7 +3,7 @@ module system.smp;
 import system.apic;
 import lib.alloc;
 import acpi.madt;
-import lib.messages;
+debug import lib.debugtools;
 import system.cpu;
 import memory.physical;
 import system.pit;
@@ -21,7 +21,7 @@ extern extern (C) size_t smpPrepareTrampoline(void*  entryPoint,
                                               ubyte  lapicID);
 
 private extern (C) void apEntryPoint(size_t cpuNumber, ubyte lapicID) {
-    log("smp: Started AP #", cpuNumber);
+    debug log("smp: Started AP #", cpuNumber);
 
     initCPU(cpuNumber, lapicID);
 
@@ -66,15 +66,15 @@ void initSMP() {
             continue;
         }
 
-        log("smp: Starting up AP #", i);
+        debug log("smp: Starting up AP #", i);
 
         if (startAP(cpuCount, localApics[i].apicID)) {
-            warn("smp: Failed to start AP #", i);
+            debug warn("smp: Failed to start AP #", i);
             continue;
         }
 
         cpuCount++;
     }
 
-    log("smp: Total CPU count: ", cpuCount);
+    debug log("smp: Total CPU count: ", cpuCount);
 }

@@ -6,13 +6,13 @@ import lib.lock: Lock;
 
 private shared Lock panicLock;
 
-/// The exit button. Kills all cores, forever, always.
-/// It's a killing machine.
+/// The exit button. Killing the OS.
 /// Params:
 ///     args = Messages to print as the panic reason.
 void panic(T...)(T args) {
     import lib.string:   buildStringInPlace, fromCString;
-    import lib.messages: error;
+    import wm.driver:    showPanicScreen;
+    debug import lib.debugtools: error;
 
     // Allow only 1 callee to panic at once.
     panicLock.acquire();
@@ -23,7 +23,8 @@ void panic(T...)(T args) {
     auto str = fromCString(buffer.ptr, ret);
 
     /// Error and lock forever.
-    error(str);
+    showPanicScreen(str);
+    debug error(str);
     while (true) {
         asm {
             cli;

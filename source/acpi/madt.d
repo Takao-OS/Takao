@@ -1,7 +1,7 @@
 module acpi.madt;
 
 import acpi.lib;
-import lib.messages;
+debug import lib.debugtools;
 import lib.panic: panic;
 import lib.alloc;
 import lib.list;
@@ -104,19 +104,19 @@ private void initMADT() {
          madtPtr += *(madtPtr + 1)) {
         switch (*(madtPtr)) {
             case 0:
-                log("acpi/madt: Found local APIC #", madtLocalApics.length);
+                debug log("acpi/madt: Found local APIC #", madtLocalApics.length);
                 madtLocalApics.push(cast(MADTlocalApic*)madtPtr);
                 break;
             case 1:
-                log("acpi/madt: Found I/O APIC #", madtIoApics.length);
+                debug log("acpi/madt: Found I/O APIC #", madtIoApics.length);
                 madtIoApics.push(cast(MADTioApic*)madtPtr);
                 break;
             case 2:
-                log("acpi/madt: Found ISO #", madtISOs.length);
+                debug log("acpi/madt: Found ISO #", madtISOs.length);
                 madtISOs.push(cast(MADTiso*)madtPtr);
                 break;
             case 4:
-                log("acpi/madt: Found NMI #", madtNMIs.length);
+                debug log("acpi/madt: Found NMI #", madtNMIs.length);
                 madtNMIs.push(cast(MADTnmi*)madtPtr);
                 break;
             default:

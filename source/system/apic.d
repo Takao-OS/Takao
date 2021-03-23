@@ -1,7 +1,7 @@
 module system.apic;
 
 import memory.virtual;
-import lib.messages;
+debug import lib.debugtools;
 import acpi.madt;
 import core.volatile;
 import system.cpu;
@@ -136,5 +136,5 @@ void initAPIC() {
     auto lapicBase = cast(size_t)madt.localControllerAddr + MEM_PHYS_OFFSET;
     lapicEOIptr = cast(uint*)(lapicBase + 0xb0);
     lapicEnable();
-    log("apic: Done! APIC initialised.");
+    debug log("apic: Done! APIC initialised.");
 }

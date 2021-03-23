@@ -1,9 +1,6 @@
 /// Stivale2 information fetching and parsing.
 module stivale2;
 
-debug import lib.string:   fromCString;
-debug import lib.messages: log;
-
 /// Main struct of the stivale2 protocol, its whats passed to the kernel and
 /// where we start our parsing and info recollecting.
 struct Stivale2 {

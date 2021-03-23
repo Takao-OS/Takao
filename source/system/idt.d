@@ -80,9 +80,8 @@ private void addInterrupt(uint number, Handler handler, ubyte ist) {
     idtEntries[number].reserved     = 0;
 }
 
-    import scheduler.thread: reschedule;
-    import system.pit:       tickHandler;
-    import system.apic:      lapicEOI;
+import system.pit:       tickHandler;
+import system.apic:      lapicEOI;
 
 /// Handler of the PIT.
 extern (C) void pitHandler() {
@@ -105,10 +104,8 @@ extern (C) void pitHandler() {
         push R14;
         push R15;
 
-        call lapicEOI;
         call tickHandler;
-        mov RDI, RSP;
-        call reschedule;
+        call lapicEOI;
 
         pop R15;
         pop R14;
