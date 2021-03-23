@@ -12,11 +12,17 @@ private shared Framebuffer* mainFramebuffer;
 ///     fb = Framebuffer to use for initializing the WM, never null.
 void initWM(Stivale2Framebuffer* fb) {
     assert(fb != null);
-    auto f = createFramebuffer(fb);
-    clearFramebuffer(f, 0xaaaaaa);
-    drawSimpleString(f, f.width / 2, f.height / 2, "Hey! This is the placeholder WM!", 0x0, 0xff8888);
-    mainFramebuffer = cast(shared)f;
+    mainFramebuffer = cast(shared)createFramebuffer(fb);
     isInit          = true;
+}
+
+/// Print a loading screen for the WM.
+void showLoadingScreen() {
+    if (isInit) {
+        auto fb = cast(Framebuffer*)mainFramebuffer;
+        clearFramebuffer(fb, 0);
+        drawSimpleString(fb, 0, 0, "Loading...", 0xffffff, 0);
+    }
 }
 
 /// Print a panic screen in the WM.

@@ -13,7 +13,7 @@ import acpi.lib;
 import system.apic;
 import system.cpu;
 import system.smp;
-import wm.driver: initWM;
+import wm.driver: initWM, showLoadingScreen;
 
 extern (C) void main(Stivale2* stivale) {
     debug log("Hai~ <3. Doing some preparatives");
@@ -36,9 +36,7 @@ extern (C) void main(Stivale2* stivale) {
 
     debug log("Initialize the WM");
     initWM(fb);
-
-    debug log("Initialize the display");
-    initWM(fb);
+    showLoadingScreen();
 
     debug log("Init CPU");
     initCPULocals();
