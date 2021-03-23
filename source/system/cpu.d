@@ -1,6 +1,6 @@
 module system.cpu;
 
-import lib.alloc;
+import memory.alloc;
 
 align(16) struct TSS {
     align(1):

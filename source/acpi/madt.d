@@ -3,7 +3,7 @@ module acpi.madt;
 import acpi.lib;
 debug import lib.debugtools;
 import lib.panic: panic;
-import lib.alloc;
+import memory.alloc;
 import lib.list;
 
 struct MADT {

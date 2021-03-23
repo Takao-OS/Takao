@@ -5,7 +5,7 @@ debug import lib.debugtools;
 import acpi.madt;
 import core.volatile;
 import system.cpu;
-import lib.alloc;
+import memory.alloc;
 
 uint lapicRead(uint reg) {
     auto madt = getMADTEntries();

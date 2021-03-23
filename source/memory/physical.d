@@ -81,7 +81,7 @@ void initPhysicalAllocator(Stivale2MemoryMap* memmap) {
 
         for (size_t j = 0; j < mmap[i].length; j += PAGE_SIZE) {
             size_t page = (mmap[i].base + j) / PAGE_SIZE;
-            btr(bitmap, page);
+            bitreset(bitmap, page);
         }
     }
 }
@@ -89,11 +89,11 @@ void initPhysicalAllocator(Stivale2MemoryMap* memmap) {
 private void* innerAlloc(size_t count, size_t limit) {
     size_t p = 0;
     while (lastUsedIndex < limit) {
-        if (!bt(bitmap, lastUsedIndex++)) {
+        if (!bittest(bitmap, lastUsedIndex++)) {
             if (++p == count) {
                 size_t page = lastUsedIndex - count;
                 foreach (size_t i; page..lastUsedIndex) {
-                    bts(bitmap, i);
+                    bitset(bitmap, i);
                 }
                 return cast(void*)(page * PAGE_SIZE);
             }
@@ -134,7 +134,7 @@ void pmmFree(void* ptr, size_t count) {
 
     size_t page = cast(size_t)ptr / PAGE_SIZE;
     foreach (size_t i; page..(page + count)) {
-        btr(bitmap, i);
+        bitreset(bitmap, i);
     }
 
     pmmLock.release();

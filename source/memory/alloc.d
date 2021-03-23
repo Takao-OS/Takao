@@ -1,4 +1,4 @@
-module lib.alloc;
+module memory.alloc;
 
 import memory.physical;
 import memory.virtual;

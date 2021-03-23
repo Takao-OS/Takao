@@ -23,7 +23,7 @@ private shared IDTPointer         idtPointer;
 
 /// Initializes the global IDT and loads it for the callee core.
 void initIDT() {
-    import system.exceptions; // All of them really.
+    import system.exceptions; // All of them really. // @suppress(dscanner.suspicious.local_imports)
 
     // Fill up exceptions.
     addInterrupt(0x00, &excDiv0Handler, 0);

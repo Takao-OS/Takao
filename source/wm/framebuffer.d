@@ -1,8 +1,8 @@
 /// Creating, managing, and deleting framebuffers.
 module wm.framebuffer;
 
-import stivale2:  Stivale2Framebuffer;
-import lib.alloc: newObj, delObj, newArray, delArray;
+import stivale2:     Stivale2Framebuffer;
+import memory.alloc: newObj, delObj, newArray, delArray;
 
 alias Colour = int; /// Integer.
 
@@ -111,7 +111,7 @@ void clearFramebuffer(Framebuffer* fb, Colour c) {
 ///     fg  = Foreground color.
 ///     bg  = Background color.
 void drawCharacter(Framebuffer* fb, size_t fbX, size_t fbY, char c, Colour fg, Colour bg) {
-    import lib.bit: btInt;
+    import lib.bit: bittest;
     import wm.font: getFontCharacter, fontHeight, fontWidth;
     assert(fb != null);
 
@@ -119,7 +119,7 @@ void drawCharacter(Framebuffer* fb, size_t fbX, size_t fbY, char c, Colour fg, C
     foreach (int y; 0..fontHeight) {
         int currLine = fontWidth;
         foreach (int x; 0..fontWidth) {
-            auto output = btInt(character[y], --currLine) ? fg : bg;
+            auto output = bittest(character[y], --currLine) ? fg : bg;
             putFramebufferPixel(fb, x + fbX, y + fbY, output);
         }
     }

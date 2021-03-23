@@ -1,6 +1,6 @@
 module lib.list;
 
-import lib.alloc;
+import memory.alloc;
 
 struct List(T) {
     private T*     storage;

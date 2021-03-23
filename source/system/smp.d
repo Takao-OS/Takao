@@ -1,7 +1,7 @@
 module system.smp;
 
 import system.apic;
-import lib.alloc;
+import memory.alloc;
 import acpi.madt;
 debug import lib.debugtools;
 import system.cpu;
