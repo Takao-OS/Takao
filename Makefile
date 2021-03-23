@@ -59,10 +59,11 @@ $(IMAGE): $(LIMINEDIR) $(KERNEL)
 	@echfs-utils -m -p0 $(IMAGE) import $(KERNEL) $(KERNEL)
 	@echfs-utils -m -p0 $(IMAGE) import $(BUILDDIR)/limine.cfg limine.cfg
 	@make -C $(LIMINEDIR) limine-install
-	@$(LIMINEDIR)/limine-install $(LIMINEDIR)/limine.bin $(IMAGE)
+	@$(LIMINEDIR)/limine-install $(IMAGE)
+	@echfs-utils -m -p0 $(IMAGE) import $(LIMINEDIR)/limine.sys limine.sys
 
 $(LIMINEDIR):
-	@git clone --depth=1 --branch=v0.6.4 $(LIMINEURL) $(LIMINEDIR)
+	@git clone --depth=1 --branch=v2.0-branch-binary $(LIMINEURL) $(LIMINEDIR)
 
 test: hdd
 	@$(QEMU) $(QEMUHARDFLAGS) -hda $(IMAGE)
