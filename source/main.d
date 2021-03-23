@@ -1,19 +1,19 @@
 module main;
 
-import stivale2;
-import system.gdt;
-import system.idt;
-import system.pic;
-import system.pit;
-import memory.physical;
-import memory.virtual;
-debug import lib.debugtools;
-import lib.panic;
-import acpi.lib;
-import system.apic;
-import system.cpu;
-import system.smp;
-import wm.driver: initWM, showLoadingScreen;
+import stivale2:        getStivale2Tag, Stivale2, Stivale2MemoryMap, Stivale2Framebuffer, Stivale2RSDP;
+import system.gdt:      initGDT;
+import system.idt:      initIDT;
+import system.pic:      initPIC;
+import system.pit:      initPIT, enablePIT;
+import memory.physical: initPhysicalAllocator;
+import memory.virtual:  AddressSpace, MEM_PHYS_OFFSET;
+import lib.panic:       panic;
+import acpi.lib:        initACPI, RSDP;
+import system.apic:     initAPIC;
+import system.cpu:      initCPU, initCPULocals;
+import system.smp:      initSMP;
+import wm.driver:       initWM, showLoadingScreen;
+debug import lib.debugtools: log;
 
 extern (C) void main(Stivale2* stivale) {
     debug log("Hai~ <3. Doing some preparatives");

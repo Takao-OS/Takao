@@ -85,7 +85,7 @@ int resizeArrayAbs(T)(T** oldPtr, size_t newCount) {
         return 0;
     } else /* if (meta.pages < pageCount) */ {
         auto ptr = newArray!T(newCount);
-        memcpy(ptr, *oldPtr, meta.pages * PAGE_SIZE);
+        ptr[0..meta.count] = (*oldPtr)[0..meta.count];
         delArray(*oldPtr);
         *oldPtr = ptr;
         return 0;
