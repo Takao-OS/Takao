@@ -73,7 +73,7 @@ extern (C) void keyboardHandler() {
         switch (input) {
             case ctrlPress:   isCtrlActive = true;  return;
             case ctrlRelease: isCtrlActive = false; return;
-            default:          break;
+            default:          return;
         }
     }
 
