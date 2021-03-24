@@ -1,0 +1,5 @@
+/**/*.o
+/test/limine
+/test/config
+/test/takao.hdd
+takao

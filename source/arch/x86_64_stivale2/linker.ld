@@ -1,0 +1,31 @@
+ENTRY(start)
+
+SECTIONS {
+    . = 2M;
+
+    /* Name required by spec. */
+    .stivale2hdr : ALIGN(4K) {
+        KEEP(*(.stivaleh2dr))
+    }
+
+    /* Actual kernel. */
+    .text : ALIGN(4K) {
+        *(.text*)
+    }
+
+    .rodata : ALIGN(4K) {
+        *(.rodata*)
+    }
+
+    .data : ALIGN(4K) {
+        *(.data*)
+    }
+
+    .bss : ALIGN(4K) {
+        *(.bss*)
+        *(COMMON)
+        . = ALIGN(4K);
+        kernelTop = .;
+    }
+}
+
