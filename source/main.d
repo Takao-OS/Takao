@@ -1,6 +1,6 @@
 module main;
 
-import stivale2:        getStivale2Tag, Stivale2, Stivale2MemoryMap, Stivale2Framebuffer, Stivale2RSDP;
+import stivale2;        // Everything really.
 import system.gdt:      initGDT;
 import system.idt:      initIDT;
 import system.pic:      initPIC;
@@ -8,6 +8,8 @@ import system.pit:      initPIT, enablePIT;
 import memory.physical: initPhysicalAllocator;
 import memory.virtual:  AddressSpace, MEM_PHYS_OFFSET;
 import lib.panic:       panic;
+import lib.string:      fromCString;
+import lib.cmdline:     getCmdlineOption;
 import acpi.lib:        initACPI, RSDP;
 import system.apic:     initAPIC;
 import system.cpu:      initCPU, initCPULocals;
@@ -18,12 +20,18 @@ debug import lib.debugtools: log;
 extern (C) void main(Stivale2* stivale) {
     debug log("Hai~ <3. Doing some preparatives");
     stivale = cast(Stivale2*)(cast(size_t)stivale + MEM_PHYS_OFFSET);
+    auto cmd    = getStivale2Tag!Stivale2CMDLine(stivale);
     auto memmap = getStivale2Tag!Stivale2MemoryMap(stivale);
     auto fb     = getStivale2Tag!Stivale2Framebuffer(stivale);
     auto rsdp   = getStivale2Tag!Stivale2RSDP(stivale);
-    if (memmap == null || fb == null || rsdp == null) {
+    if (cmd == null || memmap == null || fb == null || rsdp == null) {
         panic("Stivale2 did not provide all of the needed info");
     }
+
+    debug log("Fetching cmdline");
+    auto cmdline = fromCString(cast(char*)(cmd.cmdline + MEM_PHYS_OFFSET));
+    // auto init    = getCmdlineOption(cmdline, "init");
+    debug log("Cmdline: ", cmdline);
 
     debug log("Initialising low level structures and devices.");
     initGDT();

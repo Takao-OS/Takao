@@ -353,8 +353,8 @@ private shared ubyte[] font = [
 
 /// Get character from font.
 ubyte[] getFontCharacter(char c) {
-    const auto charSize = ((fontWidth * fontHeight) / 8);
-    const auto index    = charSize * c;
-    const auto end      = index + charSize;
+    const charSize = ((fontWidth * fontHeight) / 8);
+    const index    = charSize * c;
+    const end      = index + charSize;
     return cast(ubyte[])font[index..end];
 }

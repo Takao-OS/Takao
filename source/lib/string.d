@@ -142,3 +142,34 @@ private size_t addItem(char* result, string item, size_t index, size_t limit) {
         return 0;
     }
 }
+
+/// Find the index of the first occurence of a string inside another.
+/// Params:
+///     haystack = String to search in.
+///     needle  = String to search.
+///     start   = Index to start searching from.
+/// Returns: Found index, or the length of haystack if failed.
+size_t findString(string haystack, string needle, size_t start = 0) {
+    assert(haystack != null && needle != null);
+
+    if (needle.length == 0 || start >= haystack.length) {
+        return haystack.length;
+    }
+
+    size_t i = start;
+    while (i < haystack.length) {
+        if (haystack[i] == needle[0]) {
+            int j = 0;
+            for (; j < needle.length; j++) {
+                if (haystack[i + j] != needle[j]) {
+                    break;
+                }
+            }
+            if (j == needle.length) {
+                return i;
+            }
+        }
+        i++;
+    }
+    return i;
+}

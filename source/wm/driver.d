@@ -4,6 +4,11 @@ module wm.driver;
 import stivale2:       Stivale2Framebuffer;
 import wm.framebuffer: Framebuffer, createFramebuffer, clearFramebuffer, drawSimpleString;
 
+private immutable loadingBackground = 0x742f5e;
+private immutable loadingForeground = 0xffffff;
+private immutable panicBackground   = 0x04048b;
+private immutable panicForeground   = 0xffffff;
+
 private shared bool         isInit;
 private shared Framebuffer* mainFramebuffer;
 
@@ -20,8 +25,8 @@ void initWM(Stivale2Framebuffer* fb) {
 void showLoadingScreen() {
     if (isInit) {
         auto fb = cast(Framebuffer*)mainFramebuffer;
-        clearFramebuffer(fb, 0);
-        drawSimpleString(fb, 0, 0, "Loading...", 0xffffff, 0);
+        clearFramebuffer(fb, loadingBackground);
+        drawSimpleString(fb, 0, 0, "Loading...", loadingForeground, loadingBackground);
     }
 }
 
@@ -33,8 +38,8 @@ void showPanicScreen(string msg) {
     assert(msg != null);
     if (isInit) {
         auto fb = cast(Framebuffer*)mainFramebuffer;
-        clearFramebuffer(fb, 0xff0000);
-        drawSimpleString(fb, 0, 0, "PANIC:", 0xffffff, 0xff0000);
-        drawSimpleString(fb, 0, fontHeight, msg, 0xffffff, 0xff0000);
+        clearFramebuffer(fb, panicBackground);
+        drawSimpleString(fb, 0, 0, "PANIC:", panicForeground, panicBackground);
+        drawSimpleString(fb, 0, fontHeight, msg, panicForeground, panicBackground);
     }
 }
