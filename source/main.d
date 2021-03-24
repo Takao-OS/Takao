@@ -32,16 +32,14 @@ void kernelMain(KernelProtocol proto) {
     debug log("Starting storage subsystem");
     initStorageSubsystem();
 
-    debug log("Loading init");
-    const useInit = getCmdlineOption(proto.cmdline, "useInit");
-    if (useInit != "false") {
-        const initPath = getCmdlineOption(proto.cmdline, "init");
-        if (initPath == null) {
-            panic("No init specified");
-        }
-        const fd = openFile(initPath, FileMode.Read);
-        if (fd == -1) {
-            panic("Could not open init");
+    debug log("Loading init if any");
+    if (proto.cmdline != null) {
+        const init = getCmdlineOption(proto.cmdline, "useInit");
+        if (init != null) {
+            const fd = openFile(init, FileMode.Read);
+            if (fd == -1) {
+                panic("Could not open init");
+            }
         }
     }
 
