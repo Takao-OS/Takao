@@ -1,6 +1,6 @@
 # Takao
 
-![forthebadge](https://forthebadge.com/images/badges/contains-cat-gifs.svg)
+![Banner](banner.png)
 
 A kernel, written in D with tons of love and cat pics.
 
