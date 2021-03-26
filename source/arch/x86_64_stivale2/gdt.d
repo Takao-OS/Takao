@@ -105,7 +105,7 @@ void initGDT() {
 /// Load the GDT to the current core, replacing segments and all.
 void loadGDT() {
     asm {
-        lgdt [gdtPointer];
+        lgdt gdtPointer;
 
         // Long jump to set cs and ss.
         mov RBX, RSP;
@@ -113,7 +113,7 @@ void loadGDT() {
         push RBX;
         pushfq;
         push kernelCodeSegment;
-        lea RAX, L1; // Putting L1 directly dereferences L1 cause D dum dum.
+        lea RAX, [RIP + L1]; // Putting L1 directly dereferences L1 cause D dum dum.
         push RAX;
         iretq;
 

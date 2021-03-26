@@ -20,3 +20,8 @@ An example for a release build some appropiate flags would be
 `make DFLAGS='-O -release -inline'`, while the default flags are suited for
 debug/development builds, architecture target can also be chosen with the
 `ARCH` variable.
+
+## Projects and documents used as reference and help
+
+* [qword-os](https://github.com/qword-os/qword).
+* [The stivale specifications](https://github.com/stivale/stivale).

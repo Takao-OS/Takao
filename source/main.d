@@ -7,7 +7,7 @@ import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
 import memory.physical: initPhysicalAllocator;
 import storage.driver:  initStorageSubsystem;
-import storage.file:    openFile, fileLength, readFile, FileMode;
+import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
@@ -36,10 +36,11 @@ void kernelMain(KernelProtocol proto) {
     if (proto.cmdline != null) {
         const init = getCmdlineOption(proto.cmdline, "useInit");
         if (init != null) {
-            const fd = openFile(init, FileMode.Read);
+            const fd = open(init, FileMode.Read);
             if (fd == -1) {
                 panic("Could not open init");
             }
+            close(fd);
         }
     }
 

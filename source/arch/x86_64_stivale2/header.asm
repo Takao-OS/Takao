@@ -1,4 +1,4 @@
-section .stivale2hdr
+section .stivale2hdr write
 
 header:
     dq 0              ; Alternative entrypoint, 0 is none.
@@ -6,7 +6,7 @@ header:
     dq 0              ; Flags, we dont need anything in particular.
     dq framebufferTag ; Start of tags.
 
-section .text
+section .data
 
 framebufferTag:
     dq 0x3ecc1bc43d0f7971 ; Identifier of the tag.

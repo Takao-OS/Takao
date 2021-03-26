@@ -15,6 +15,7 @@ TIMEOUT=0
 :Takao
 KERNEL_PATH=boot:///takao
 PROTOCOL=stivale2
+KASLR=yes
 EOF
 
 [ -d $LIMINE_DIR ] || \

@@ -34,7 +34,7 @@ private __gshared File*  files; // The index of the file is the file descriptor.
 ///     path = Absolute path to open the file.
 ///     mode = Mode to open the file with.
 /// Returns: The file descriptor, or `-1` if failed. 
-FileDescriptor openFile(string path, FileMode mode) {
+FileDescriptor open(string path, FileMode mode) {
     import lib.string:    intFromString, findString;
     import storage.echfs: echfsReadFile;
 
@@ -108,7 +108,7 @@ FileDescriptor openFile(string path, FileMode mode) {
 /// Params:
 ///     fd = File descriptor to close.
 /// Returns: Closed fd or `-1` if failed.
-FileDescriptor closeFile(FileDescriptor fd) {
+FileDescriptor close(FileDescriptor fd) {
     import storage.echfs: echfsWriteFile;
 
     assert(fd != -1);
@@ -143,7 +143,7 @@ FileDescriptor closeFile(FileDescriptor fd) {
 ///     output = Where to write.
 ///     count  = Count of bytes to read.
 /// Returns: Bytes that could be count, or `-1` if failed.
-ptrdiff_t readFile(FileDescriptor fd, ubyte* output, size_t count) {
+ptrdiff_t read(FileDescriptor fd, ubyte* output, size_t count) {
     assert(fd != -1);
 
     if (fd < 0 || fd > fileCount - 1) {
@@ -167,7 +167,7 @@ ptrdiff_t readFile(FileDescriptor fd, ubyte* output, size_t count) {
 ///     data  = Data to write.
 ///     count = Count of bytes to write.
 /// Returns: Bytes that were written, or `-1` if failed.
-ptrdiff_t writeFile(FileDescriptor fd, ubyte* data, size_t count) {
+ptrdiff_t write(FileDescriptor fd, ubyte* data, size_t count) {
     assert(fd != -1);
 
     if (fd < 0 || fd > fileCount - 1) {
@@ -183,42 +183,4 @@ ptrdiff_t writeFile(FileDescriptor fd, ubyte* data, size_t count) {
     }
 
     return count;
-}
-
-/// Change the current pointer of a file. It will never change to be negative.
-/// Passing a change of 0 will return the current offset.
-/// Params:
-///     fd     = File descriptor to change.
-///     offset = Difference of offset to move.
-/// Return: Final current pointer of the file after offset is applied.
-size_t movePointer(FileDescriptor fd, ulong offset) {
-    assert(fd != -1);
-
-    if (fd < 0 || fd > fileCount - 1) {
-        return 0;
-    }
-
-    if (files[fd].currLocation + offset > files[fd].fileLength) {
-        files[fd].currLocation = files[fd].fileLength;
-    } else if (files[fd].currLocation + offset < 0) {
-        files[fd].currLocation = 0;
-    } else {
-        files[fd].currLocation += offset;
-    }
-
-    return files[fd].currLocation;
-}
-
-/// Get length of file.
-/// Params:
-///     fd = File descriptor.
-/// Returns: Length, in bytes.
-size_t fileLength(FileDescriptor fd) {
-    assert(fd != -1);
-
-    if (fd < 0 || fd > fileCount - 1) {
-        return 0;
-    }
-
-    return files[fd].fileLength;
 }

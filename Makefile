@@ -21,9 +21,9 @@ LDFLAGS =
 # Hardflags and directories.
 ARCHDIR     := $(SOURCEDIR)/arch
 SARCHDIR    := $(ARCHDIR)/$(ARCH)
-DHARDFLAGS  := $(DFLAGS)  -relocation-model=static -betterC -op -version=$(ARCH)
+DHARDFLAGS  := $(DFLAGS)  -relocation-model=pic -betterC -op -version=$(ARCH)
 ASHARDFLAGS := $(ASFLAGS) -felf64
-LDHARDFLAGS := $(LDFLAGS) --nostdlib
+LDHARDFLAGS := $(LDFLAGS) --nostdlib -pie
 
 # Modify flags for the target.
 ifeq ($(ARCH), x86_64_stivale2)
