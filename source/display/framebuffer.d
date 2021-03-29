@@ -8,15 +8,15 @@ alias Colour = uint; /// Colours the framebuffer accepts.
 
 /// Struct for managing framebuffers and common functions.
 struct Framebuffer {
-    private Colour* address;
-    private bool    isMemory;
-    private size_t  width;
-    private size_t  height;
-    private size_t  pitch;
-    private size_t  size;
+    Colour* address;  /// Address of the framebuffer content.
+    bool    isMemory; /// Whether the framebuffer is in memory.
+    size_t  width;    /// Width of the framebuffer in pixels.
+    size_t  height;   /// Height of the framebuffer in pixels.
+    size_t  pitch;    /// Pitch of the framebuffer in pixels.
+    size_t  size;     /// Size of the framebuffer in pixels, with pitch.
 
     /// Create a framebuffer from a stivale framebuffer.
-    this(KernelFramebuffer fb) {
+    this(const ref KernelFramebuffer fb) {
         address  = cast(Colour*)fb.address;
         isMemory = false;
         width    = fb.width;
@@ -45,15 +45,6 @@ struct Framebuffer {
         assert(pitch % Colour.sizeof == 0, "Pitch is not a multiple of 4");
     }
 
-    /// Get content pointer of the framebuffer.
-    @property Colour *contents() { return address; }
-    /// Get raw size in bytes of the framebuffer.
-    @property size_t rawsize() { return size / Colour.sizeof; }
-    /// Get width in pixels.
-    @property size_t getWidth() { return width; }
-    /// Get height in pixels.
-    @property size_t getHeight() { return height; }
-
     /// Put pixel on coordinates.
     void putPixel(size_t x, size_t y, Colour c) {
         if (x >= width || y >= height) {
@@ -65,7 +56,7 @@ struct Framebuffer {
 
     /// Paint the whole framebuffer in one colour.
     void clear(Colour c) {
-        const size_t fbSize = rawsize();
+        const size_t fbSize = size / Colour.sizeof;
         for (size_t i = 0; i < fbSize; i++) {
             address[i] = c;
         }

@@ -15,16 +15,16 @@ KernelMemoryMap translateStivaleMemmap(Stivale2Memmap* memmap) {
     assert(memmap != null);
 
     size_t memmapCount;
-    const mentries = &(memmap.entries);
-    foreach (i; 0..memmap.count) {
+    const mentries = (&memmap.entries)[0..memmap.count];
+    foreach (entry; mentries) {
         if (memmapCount >= privateMemmap.length) {
             break;
         }
-        if (mentries[i].type != Stivale2MemoryType.Usable) {
+        if (entry.type != Stivale2MemoryType.Usable) {
             continue;
         }
-        privateMemmap[memmapCount].base = mentries[i].base;
-        privateMemmap[memmapCount].size = mentries[i].length;
+        privateMemmap[memmapCount].base = entry.base;
+        privateMemmap[memmapCount].size = entry.length;
         memmapCount++;
     }
 

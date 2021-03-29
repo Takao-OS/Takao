@@ -34,41 +34,39 @@ private immutable Colour[] cursor = [
     X, o, o, o, o, o, o, o, o, o, o, o, o, o, o,
 ];
 
-private __gshared long cursorX;
-private __gshared long cursorY;
+/// Object to represent a cursor.
+struct Cursor {
+    long cursorX; /// Current X of the cursor.
+    long cursorY; /// Current Y of the cursor.
 
-/// Draw the cursor again given an amount of position variation.
-void updateCursor(int xVariation, int yVariation, size_t height, size_t width) {
-    if (cursorX + xVariation < 0) {
-        cursorX = 0;
-    } else if (cursorX + xVariation + cursorWidth >= width) {
-        cursorX = width - 1 - cursorWidth;
-    } else {
-        cursorX += xVariation;
+    /// Update the position of the cursor, taking into account framebuffer
+    /// limits and positions.
+    void update(int xVariation, int yVariation, size_t height, size_t width) {
+        if (cursorX + xVariation < 0) {
+            cursorX = 0;
+        } else if (cursorX + xVariation + cursorWidth >= width) {
+            cursorX = width - 1 - cursorWidth;
+        } else {
+            cursorX += xVariation;
+        }
+
+        if (cursorY + yVariation < 0) {
+            cursorY = 0;
+        } else if (cursorY + yVariation + cursorHeight >= height) {
+            cursorY = height - 1 - cursorHeight;
+        } else {
+            cursorY += yVariation;
+        }
     }
 
-    if (cursorY + yVariation < 0) {
-        cursorY = 0;
-    } else if (cursorY + yVariation + cursorHeight >= height) {
-        cursorY = height - 1 - cursorHeight;
-    } else {
-        cursorY += yVariation;
-    }
-}
-
-/// Get the absolute coordinates of the cursor.
-void getCursorPosition(ref size_t x, ref size_t y) {
-    x = cursorX;
-    y = cursorY;
-}
-
-/// Draw the cursor on the tracked position.
-void drawCursor(Framebuffer *fb) {
-    foreach (x; 0..cursorWidth) {
-        foreach (y; 0..cursorHeight) {
-            const Colour px = cursor[y * cursorWidth + x];
-            if (px != o) {
-                fb.putPixel(cursorX + x, cursorY + y, px);
+    /// Draw the cursor on the tracked position.
+    void draw(ref Framebuffer fb) {
+        foreach (x; 0..cursorWidth) {
+            foreach (y; 0..cursorHeight) {
+                const px = cursor[y * cursorWidth + x];
+                if (px != o) {
+                    fb.putPixel(cursorX + x, cursorY + y, px);
+                }
             }
         }
     }

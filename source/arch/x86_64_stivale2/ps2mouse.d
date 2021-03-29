@@ -47,7 +47,7 @@ private __gshared bool           discardPacket;
 
 /// Handler to be called when a mouse movement is ready.
 extern (C) void mouseHandler() {
-    import display.wm:           wmMouseEntry;
+    import main:           mainWM;
     debug import lib.debugtools: warn;
 
     switch (mouseCycle) {
@@ -94,7 +94,7 @@ extern (C) void mouseHandler() {
             } else {
                 yVariation = currentPacket.yMovement;
             }
-            wmMouseEntry(xVariation, -yVariation, isLeftClick, isRightClick);
+            mainWM.mouseEvent(xVariation, -yVariation, isLeftClick, isRightClick);
     }
 }
 

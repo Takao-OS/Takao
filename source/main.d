@@ -1,7 +1,7 @@
 /// Main function of the freestanding kernel, and its most immediate utilities.
 module main;
 
-import display.wm:      initWM, loadingScreen, refresh, addWindow;
+import display.wm:      WM;
 import display.window:  Window;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
@@ -11,6 +11,8 @@ import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
+
+__gshared WM mainWM; /// Main window manager.
 
 /// Main function of the kernel.
 /// The state when the function is called must be:
@@ -26,8 +28,8 @@ void kernelMain(KernelProtocol proto) {
     disableInterrupts();
 
     debug log("Starting WM");
-    initWM(proto.fb);
-    loadingScreen();
+    mainWM = WM(proto.fb);
+    mainWM.loadingScreen();
 
     debug log("Starting storage subsystem");
     initStorageSubsystem();
@@ -51,16 +53,18 @@ void kernelMain(KernelProtocol proto) {
     const curr  = getCurrentCore();
     foreach (i; 0..cores) {
         if (i == curr) {
-            addWindow(Window("Hey its current!", 100, 100));
+            mainWM.createWindow("Hey its current!");
         } else {
             executeCore(i, () {
-                addWindow(Window("Lol", 100, 100));
+                mainWM.createWindow("Lol");
                 killCore();
             });
         }
     }
 
-    for (;;) { refresh(); }
+    for (;;) {
+        mainWM.refresh();
+    }
 
     panic("End of kernel");
 }

@@ -3,7 +3,7 @@
 module lib.panic;
 
 import lib.lock: Lock;
-
+import main:     mainWM;
 private __gshared Lock panicLock;
 
 /// The exit button. Kills all cores, forever, always.
@@ -11,7 +11,6 @@ private __gshared Lock panicLock;
 /// Params:
 ///     msg = Message to print as the panic reason, not null.
 void panic(T...)(T args) {
-    import display.wm:    panicScreen;
     import archinterface: killCore, executeCore, getCoreCount, getCurrentCore, disableInterrupts;
     import lib.string:    buildStringInPlace, fromCString;
     debug import lib.debugtools: error;
@@ -36,7 +35,7 @@ void panic(T...)(T args) {
 
     // Display panic with all means we have and die.
     disableInterrupts();
-    panicScreen(str);
+    mainWM.panicScreen(str);
     debug error(str);
     killCore();
 }

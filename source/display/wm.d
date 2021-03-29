@@ -2,156 +2,175 @@
 module display.wm;
 
 import kernelprotocol:      KernelFramebuffer;
-import display.framebuffer: Framebuffer;
+import display.cursor:      Cursor;
+import display.framebuffer: Framebuffer, Colour;
 import display.window:      Window;
 import memory.alloc:        allocate, resizeAllocation;
 import memory.physical:     PAGE_SIZE;
 import lib.lock:            Lock;
+import lib.list:            List;
 
-private __gshared bool        isInit;
-private __gshared Lock        wmLock;
-private __gshared size_t      windows;
-private __gshared Window*     windowList;
-private __gshared Framebuffer backBuffer;
-private __gshared Framebuffer frontBuffer;
-private __gshared Framebuffer framebuffer;
+private struct WindowPackage {
+    bool   isPresent;
+    int    wh;
+    Window inner;
+}
 
-private immutable loadingBackground = 0x0;
+private immutable loadingBackground = 0x000000;
 private immutable loadingFontColour = 0xffffff;
 private immutable panicBackground   = 0xff0000;
 private immutable panicFontColour   = 0xffffff;
 private immutable wmBackground      = 0xaaaaaa;
 
-/// Start window manager.
-void initWM(KernelFramebuffer fb) {
-    isInit = true;
-    windows     = 0;
-    windowList  = allocate!Window(0);
-    backBuffer  = Framebuffer(fb.width, fb.height, fb.pitch);
-    frontBuffer = Framebuffer(fb.width, fb.height, fb.pitch);
-    framebuffer = Framebuffer(fb);
-    backBuffer.clear(0x0);
-    frontBuffer.clear(0x0);
-    framebuffer.clear(0x0);
-}
+private __gshared int windowMaxWH;
 
-/// Display loading screen straight to the framebuffer, no double buffering.
-void loadingScreen() {
-    if (isInit) {
-        framebuffer.clear(0x0);
-        framebuffer.drawString(10, 10, "Loading...", loadingFontColour, loadingBackground);
-    }
-}
+/// Window manager.
+struct WM {
+    private bool               isInit;
+    private Lock               lock;
+    private Framebuffer        backBuffer;
+    private Framebuffer        frontBuffer;
+    private Framebuffer        realBuffer;
+    private Cursor             cursor;
+    private List!WindowPackage windows;
 
-/// Show a panic screen, along with some information, straight to framebuffer.
-void panicScreen(string message) {
-    import display.font: fh = fontHeight;
-
-    if (isInit) {
-        framebuffer.clear(panicBackground);
-        framebuffer.drawString(10, 10,          "PANIC:",                       panicFontColour, panicBackground);
-        framebuffer.drawString(10, 10 + fh,     message,                        panicFontColour, panicBackground);
-        framebuffer.drawString(10, 10 + fh * 2, "All data has been saved",      panicFontColour, panicBackground);
-        framebuffer.drawString(10, 10 + fh * 3, "Feel free to restart your PC", panicFontColour, panicBackground);
-    }
-}
-
-/// Add window.
-void addWindow(Window win) {
-    wmLock.acquire();
-    resizeAllocation(&windowList, 1);
-    windowList[windows++] = win;
-    wmLock.release();
-}
-
-/// Pop window.
-void popWindow(size_t index) {
-    wmLock.acquire();
-    if (index >= windows) {
-        return;
+    /// Create a WM for a physical framebuffer.
+    this(const ref KernelFramebuffer fb) {
+        backBuffer  = Framebuffer(fb.width, fb.height, fb.pitch);
+        frontBuffer = Framebuffer(fb.width, fb.height, fb.pitch);
+        realBuffer  = Framebuffer(fb);
+        cursor      = Cursor(fb.width / 2, fb.height / 2);
+        windows     = List!WindowPackage(5);
+        isInit      = true;
+        lock.release();
     }
 
-    foreach (i; (index + 1)..windows) {
-        windowList[i - 1] = windowList[i];
+    /// Display the loading screen, or do nothing if not initialized.
+    void loadingScreen() {
+        lock.acquire();
+        realBuffer.clear(0x0);
+        realBuffer.drawString(10, 10, "Loading...", loadingFontColour, loadingBackground);
+        lock.release();
     }
-    windows--;
-    resizeAllocation(&windowList, -1);
-    wmLock.release();
-}
 
-/// Refresh the screen, showing all the window changes.
-void refresh() {
-    import display.cursor: drawCursor;
-
-    // Draw everything.
-    backBuffer.clear(wmBackground);
-    foreach (i; 0..windows) {
-        windowList[i].draw(&backBuffer);
+    /// Display a panic screen, always prints, regardless of locks.
+    /// Params:
+    ///     message = Message to print, never null.
+    void panicScreen(string message) {
+        import display.font: fh = fontHeight;
+        assert(message != null);
+        if (!isInit) {
+            return;
+        }
+        realBuffer.clear(panicBackground);
+        realBuffer.drawString(10, 10,          "PANIC:",                       panicFontColour, panicBackground);
+        realBuffer.drawString(10, 10 + fh,     message,                        panicFontColour, panicBackground);
+        realBuffer.drawString(10, 10 + fh * 2, "All data has been saved",      panicFontColour, panicBackground);
+        realBuffer.drawString(10, 10 + fh * 3, "Feel free to restart your PC", panicFontColour, panicBackground);
     }
-    drawCursor(&backBuffer);
 
-    // Compare back and front buffer, and just write the changes.
-    const size_t fbSize = backBuffer.rawsize();
-    foreach (i; 0..fbSize) {
-        if (backBuffer.contents[i] != frontBuffer.contents[i]) {
-            framebuffer.contents[i] = backBuffer.contents[i];
+    /// Create a window.
+    /// Params:
+    ///     name = Name of the window, null if none.
+    /// Returns: Window handle number if successful, -1 in failure.
+    int createWindow(string name) {
+        lock.acquire();
+        auto wh  = windowMaxWH++;
+        auto win = Window(name, 300, 300);
+        foreach (i; 0..windows.length) {
+            if (!windows[i].isPresent) {
+                windows[i].isPresent = true;
+                windows[i].wh        = wh;
+                windows[i].inner     = win;
+                goto done;
+            }
+        }
+        windows.push(WindowPackage(true, wh, win));
+    done:
+        lock.release();
+        return wh;
+    }
+
+    /// Remove a window.
+    /// Params:
+    ///     window = Window to remove, never -1.
+    void removeWindow(int window) {
+        assert(window != -1);
+        lock.acquire();
+        foreach (i; 0..windows.length) {
+            if (!windows[i].isPresent && windows[i].wh == window) {
+                windows[i].isPresent = false;
+                goto ret;
+            }
+        }
+    ret:
+        lock.release();
+    }
+
+    /// Refresh the WM.
+    void refresh() {
+        // Draw everything.
+        backBuffer.clear(wmBackground);
+        foreach_reverse (i; 0..windows.length) {
+            if (windows[i].isPresent) {
+                windows[i].inner.draw(&backBuffer);
+            }
+        }
+        cursor.draw(backBuffer);
+
+        // Compare back and front buffer, and just write the changes.
+        const fbSize = backBuffer.size / Colour.sizeof;
+        foreach (i; 0..fbSize) {
+            if (backBuffer.address[i] != frontBuffer.address[i]) {
+                realBuffer.address[i] = backBuffer.address[i];
+            }
+        }
+
+        // Swap back and front buffer.
+        auto temp   = backBuffer; // @suppress(dscanner.suspicious.unmodified)
+        backBuffer  = frontBuffer;
+        frontBuffer = temp;
+    }
+
+    /// Called to act on keyboard input.
+    void keyboardEvent(bool isAlt, char c) {
+        if (isAlt) {
+            switch (c) {
+                case 'n': createWindow("New window"); break;
+                case 'd': removeWindow(0);            break;
+                default:                              break;
+            }
         }
     }
 
-    // Swap back and front buffer.
-    auto temp   = backBuffer; // @suppress(dscanner.suspicious.unmodified)
-    backBuffer  = frontBuffer;
-    frontBuffer = temp;
-}
+    /// Called to act on mouse input.
+    void mouseEvent(int xVariation, int yVariation, bool isLeftClick, bool isRightClick) {
+        size_t cursorX = cursor.cursorX;
+        size_t cursorY = cursor.cursorY;
+        cursor.update(xVariation, yVariation, backBuffer.height, backBuffer.width);
 
-/// Handler of keyboard input.
-void wmKeyboardEntry(bool isAlt, char c) {
-    if (isAlt) {
-        switch (c) {
-            case 'n':
-                auto win = Window("New window", 300, 200);
-                addWindow(win);
-                break;
-            case 'd':
-                popWindow(0);
-                break;
-            default:
-                break;
-        }
-    }
-}
-
-/// Handler of mouse input.
-void wmMouseEntry(int xVariation, int yVariation, bool isLeftClick, bool isRightClick) {
-    import display.cursor: updateCursor, getCursorPosition;
-
-    size_t cursorX;
-    size_t cursorY;
-    getCursorPosition(cursorX, cursorY);
-    updateCursor(xVariation, yVariation, backBuffer.getHeight, backBuffer.getWidth);
-
-    if (isLeftClick) {
-        foreach_reverse (i; 0..windows) {
-            auto win = &windowList[i];
-            if (win.isInWindow(cursorX, cursorY)) {
-                auto temp = windowList[windows - 1]; // @suppress(dscanner.suspicious.unmodified)
-                windowList[windows - 1] = windowList[i];
-                windowList[i]           = temp;
-                win = &windowList[windows - 1];
-                win.setFocused(true);
-
-                if (win.isTitleBar(cursorX, cursorY)) {
-                    win.move(xVariation, yVariation);
-                } else if (win.isInLeftBorders(cursorX, cursorY)) {
-                    win.resize(xVariation, yVariation, false);
-                } else if (win.isInRightBorders(cursorX, cursorY)) {
-                    win.resize(xVariation, yVariation);
+        if (isLeftClick) {
+            foreach (i; 0..windows.length) {
+                auto win = &windows[i];
+                if (win.inner.isInWindow(cursorX, cursorY)) {
+                    auto temp  = windows[0]; // @suppress(dscanner.suspicious.unmodified)
+                    windows[0] = *win;
+                    windows[i] = temp;
+                    windows[0].inner.setFocused(true);
+                    auto w = &windows[0].inner; 
+                    if (w.isTitleBar(cursorX, cursorY)) {
+                        w.move(xVariation, yVariation);
+                    } else if (w.isInLeftBorders(cursorX, cursorY)) {
+                        w.resize(xVariation, yVariation, false);
+                    } else if (w.isInRightBorders(cursorX, cursorY)) {
+                        w.resize(xVariation, yVariation);
+                    } else {
+                        w.putPixel(cursorX, cursorY, 0xffffff);
+                    }
+                    break;
                 } else {
-                    win.putPixel(cursorX, cursorY, 0xffffff);
+                    win.inner.setFocused(false);
                 }
-                break;
-            } else {
-                win.setFocused(false);
             }
         }
     }

@@ -57,17 +57,17 @@ struct Window {
         }
 
         // Readjust ourselves if needed.
-        if (windowX >= fb.getWidth()) {
+        if (windowX >= fb.width) {
             windowX = 0;
         }
-        if (windowX + canvasWidth >= fb.getWidth()) {
-            windowX = fb.getWidth() - canvasWidth;
+        if (windowX + canvasWidth >= fb.width) {
+            windowX = fb.width - canvasWidth;
         }
-        if (windowY >= fb.getHeight()) {
+        if (windowY >= fb.height) {
             windowY = 0;
         }
-        if (windowY + canvasHeight + fontHeight >= fb.getHeight()) {
-            windowY = fb.getHeight() - canvasHeight - fontHeight;
+        if (windowY + canvasHeight + fontHeight >= fb.height) {
+            windowY = fb.height - canvasHeight - fontHeight;
         }
 
         // Title work.

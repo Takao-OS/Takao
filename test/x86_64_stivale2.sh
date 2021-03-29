@@ -6,7 +6,7 @@ IMAGE=takao.hdd
 KERNEL=../takao
 LIMINE_URL="https://github.com/limine-bootloader/limine.git"
 LIMINE_DIR="limine"
-LIMINE_VERS="v2.0-branch-binary"
+LIMINE_VERS="v2.1-branch-binary"
 
 rm -f config $IMAGE
 
@@ -15,7 +15,6 @@ TIMEOUT=0
 :Takao
 KERNEL_PATH=boot:///takao
 PROTOCOL=stivale2
-KASLR=yes
 EOF
 
 [ -d $LIMINE_DIR ] || \
