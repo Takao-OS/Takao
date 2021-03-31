@@ -4,6 +4,10 @@
 
 A kernel, written in D with tons of love and cat pics.
 
+You can follow the development and meet the team at
+[the official discord server](https://discord.gg/uTughVXwbd) (We have more seal
+pictures).
+
 ## Building the source code
 
 Make sure you have installed:

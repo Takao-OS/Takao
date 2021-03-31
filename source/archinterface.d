@@ -99,3 +99,150 @@ void executeCore(size_t core, void function() func) {
     cpuLocals[core].execLock.release();
     lapicSendIPI(cast(int)core, 0xcc);
 }
+
+private immutable pageSize         = 0x1000;
+private immutable pageTablePresent = 1 << 0;
+private immutable pageTableEntries = 512;
+
+import main: mainAllocator;
+
+private size_t* findOrAllocPageTable(size_t* table, size_t index, size_t flags) {
+    auto ret = findPageTable(table, index);
+
+    if (ret == null) {
+        ret = cast(size_t*)mainAllocator.allocAndZero(1);
+        if (ret == null) {
+            return null;
+        }
+        table[index] = cast(size_t)ret | flags;
+    }
+
+    return ret;
+}
+
+private size_t* findPageTable(size_t* table, size_t index) {
+    if (table[index] & pageTablePresent) {
+        // Remove flags and take address.
+        return cast(size_t*)(table[index] & ~(cast(size_t)0xfff));
+    } else {
+        return null;
+    }
+}
+
+private void cleanPageTable(size_t* table) {
+    for (size_t i = 0;; i++) {
+        if (i == pageTableEntries) {
+            mainAllocator.free(cast(void*)table, 1);
+        } else if (table[i] & pageTablePresent) {
+            return;
+        }
+    }
+}
+
+/// Types of mapping the MMU can do.
+enum ArchMappingType : ubyte {
+    Supervisor   = 0b00000001, /// Page owned by the kernel, else by the user.
+    ReadOnly     = 0b00000010, /// Read only for the owner, else can also write.
+    NoExecute    = 0b00000100, /// Cannot execute page, else can execute.
+    Global       = 0b00001000, /// Page is global, else is local.
+    WriteCombine = 0b00010000  /// Page is write combining, else its not.
+}
+
+immutable ArchMMUPage = 0x1000; /// Size of the MMU page, and alignment for mappings.
+
+/// MMU of a given core for a given arch, not locked.
+struct ArchMMU {
+    private size_t* pml4;
+
+    /// Create a core specific MMU.
+    this(out bool success) {
+        pml4    = cast(size_t*)(mainAllocator.allocAndZero(1));
+        success = pml4 == null ? false : true;
+    }
+
+    void setActive() {
+        import arch.x86_64_stivale2.cpu: writeCR3;
+        writeCR3(cast(size_t)pml4);
+    }
+
+    /// Map a physical 4k block of addresses to a virtual one.
+    /// Returns: true if success, false if failure.
+    bool mapPage(size_t physicalAddress, size_t virtualAddress, ubyte type) {
+        // Calculate the indexes in the various tables using the virtual addr.
+        auto pml4Entry = (virtualAddress & (cast(size_t)0x1ff << 39)) >> 39;
+        auto pml3Entry = (virtualAddress & (cast(size_t)0x1ff << 30)) >> 30;
+        auto pml2Entry = (virtualAddress & (cast(size_t)0x1ff << 21)) >> 21;
+        auto pml1Entry = (virtualAddress & (cast(size_t)0x1ff << 12)) >> 12;
+
+        // Find or create tables.
+        size_t* pml3 = findOrAllocPageTable(pml4, pml4Entry, 0b111);
+        if (pml3 == null) {
+            return false;
+        }
+        size_t* pml2 = findOrAllocPageTable(pml3, pml3Entry, 0b111);
+        if (pml2 == null) {
+            return false;
+        }
+        size_t* pml1 = findOrAllocPageTable(pml2, pml2Entry, 0b111);
+        if (pml1 == null) {
+            return false;
+        }
+
+        // Set the entry as present and point it to the passed address.
+        // Also set flags.
+        ulong flags;
+        if (!(type & ArchMappingType.Supervisor)) {
+            flags |= (1 << 2);
+        }
+        if (!(type & ArchMappingType.ReadOnly)) {
+            flags |= (1 << 1);
+        }
+        if (type & ArchMappingType.Global) {
+            flags |= (1 << 8);
+        }
+        if (type & ArchMappingType.WriteCombine) {
+            flags |= (1 << 7);
+        }
+        pml1[pml1Entry] = physicalAddress | flags | 1;
+        asm {
+            invlpg virtualAddress;
+        }
+        return true;
+    }
+
+    /// Unmap a 4k virtual address block.
+    /// Returns: true if success, false if failure.
+    bool unmapPage(size_t virtualAddress) {
+        // Calculate the indexes in the various tables using the virtual addr.
+        auto pml4Entry = (virtualAddress & (cast(size_t)0x1FF << 39)) >> 39;
+        auto pml3Entry = (virtualAddress & (cast(size_t)0x1FF << 30)) >> 30;
+        auto pml2Entry = (virtualAddress & (cast(size_t)0x1FF << 21)) >> 21;
+        auto pml1Entry = (virtualAddress & (cast(size_t)0x1FF << 12)) >> 12;
+
+        // Find or die if we dont find them.
+        size_t* pml3 = findPageTable(pml4, pml4Entry);
+        if (pml3 == null) {
+            return false;
+        }
+        size_t* pml2 = findPageTable(pml3, pml3Entry);
+        if (pml2 == null) {
+            return false;
+        }
+        size_t* pml1 = findPageTable(pml2, pml2Entry);
+        if (pml1 == null) {
+            return false;
+        }
+
+        // Unmap.
+        pml1[pml1Entry] = 0;
+
+        // Cleanup.
+        cleanPageTable(pml3);
+        cleanPageTable(pml2);
+        cleanPageTable(pml1);
+        asm {
+            invlpg virtualAddress;
+        }
+        return true;
+    }
+}

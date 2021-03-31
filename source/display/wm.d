@@ -5,7 +5,7 @@ import kernelprotocol:      KernelFramebuffer;
 import display.cursor:      Cursor;
 import display.framebuffer: Framebuffer, Colour;
 import display.window:      Window;
-import memory.virtual:      pageSize;
+import memory.virtual:      pageSize, MapType;
 import lib.math:            divRoundUp;
 import lib.lock:            Lock;
 import lib.list:            List;
@@ -45,7 +45,7 @@ struct WM {
         const fbPages = divRoundUp(fb.height * fb.pitch, pageSize);
         foreach (i; 0..fbPages) {
             const pageAddress = fb.address + (i * pageSize);
-            mainMappings.mapPage(pageAddress, pageAddress, 0x03);
+            mainMappings.mapPage(pageAddress, pageAddress, MapType.Supervisor | MapType.WriteCombine);
         }
 
         cursor  = Cursor(fb.width / 2, fb.height / 2);

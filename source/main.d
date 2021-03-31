@@ -29,7 +29,7 @@ void kernelMain(KernelProtocol proto) {
     debug log("Hi from the freestanding kernel!");
     debug proto.debugPrint();
     disableInterrupts();
-panic("A");
+
     debug log("Creating and activating main mappings");
     mainMappings = VirtualSpace(proto.mmap);
     mainMappings.setActive();
