@@ -6,7 +6,6 @@ import display.cursor:      Cursor;
 import display.framebuffer: Framebuffer, Colour;
 import display.window:      Window;
 import memory.alloc:        allocate, resizeAllocation;
-import memory.physical:     PAGE_SIZE;
 import lib.lock:            Lock;
 import lib.list:            List;
 

@@ -5,23 +5,24 @@ import display.wm:      WM;
 import display.window:  Window;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
-import memory.physical: initPhysicalAllocator;
+import memory.physical: PhysicalAllocator;
 import storage.driver:  initStorageSubsystem;
 import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
 
-__gshared WM mainWM; /// Main window manager.
+__gshared WM                mainWM;        /// Main window manager.
+__gshared PhysicalAllocator mainAllocator; /// Main allocator.
 
 /// Main function of the kernel.
 /// The state when the function is called must be:
 ///     - All cores but the one executing this function must be halting.
 ///     - Interrupts can be on or off.
 ///     - Flat addressing, no paging or anything.
-///     - The memory allocator must be already initialized by calling
-///       `initPhysicalAllocator`, this is done for ports that might require
-///       memory management for hardware initialization purposes.
+///     - The memory allocator must be already initialized, this is done for
+///       ports that might require memory management for hardware initialization
+///       purposes.
 void kernelMain(KernelProtocol proto) {
     debug log("Hi from the freestanding kernel!");
     debug proto.debugPrint();

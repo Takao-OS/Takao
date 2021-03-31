@@ -1,6 +1,7 @@
 module memory.alloc;
 
-import memory.physical;
+import main: mainAllocator;
+import memory.physical: blockSize;
 import lib.math;
 import lib.glue;
 
@@ -10,17 +11,17 @@ private struct ArrayAllocMetadata {
 }
 
 size_t getAllocationSize(void* ptr) {
-    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
+    auto meta = cast(ArrayAllocMetadata*)(ptr - blockSize);
     return meta.count;
 }
 
 T* allocate(T = ubyte)(size_t count = 1) {
-    auto pageCount = divRoundUp(T.sizeof * count, PAGE_SIZE);
-    auto ptr = pmmAllocAndZero(pageCount + 1);
+    auto pageCount = divRoundUp(T.sizeof * count, blockSize);
+    auto ptr = mainAllocator.allocAndZero(pageCount + 1);
     assert(ptr != null);
 
     auto meta = cast(ArrayAllocMetadata*)ptr;
-    ptr += PAGE_SIZE;
+    ptr += blockSize;
 
     meta.pages = pageCount;
     meta.count = count;
@@ -29,7 +30,7 @@ T* allocate(T = ubyte)(size_t count = 1) {
 }
 
 int resizeAllocation(T)(T** oldPtr, long diff) {
-    auto meta = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - PAGE_SIZE);
+    auto meta = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - blockSize);
 
     size_t newCount;
 
@@ -43,22 +44,22 @@ int resizeAllocation(T)(T** oldPtr, long diff) {
 }
 
 int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
-    auto pageCount = divRoundUp(T.sizeof * newCount, PAGE_SIZE);
-    auto meta      = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - PAGE_SIZE);
+    auto pageCount = divRoundUp(T.sizeof * newCount, blockSize);
+    auto meta      = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - blockSize);
 
     if (meta.pages == pageCount) {
         meta.count = newCount;
         return 0;
     } else if (meta.pages > pageCount) {
         auto ptr = cast(void*)*oldPtr;
-        ptr += (pageCount * PAGE_SIZE);
-        pmmFree(ptr, meta.pages - pageCount);
+        ptr += (pageCount * blockSize);
+        mainAllocator.free(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
         meta.count = newCount;
         return 0;
     } else /* if (meta.pages < pageCount) */ {
         auto ptr = cast(ubyte*)allocate!T(newCount);
-        foreach (size_t c; 0..meta.pages * PAGE_SIZE) {
+        foreach (size_t c; 0..meta.pages * blockSize) {
             ptr[c] = (cast(ubyte*)*oldPtr)[c];
         }
 
@@ -69,7 +70,7 @@ int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
 }
 
 void free(void *ptr) {
-    auto meta = cast(ArrayAllocMetadata*)(ptr - PAGE_SIZE);
-    ptr -= PAGE_SIZE;
-    pmmFree(ptr, meta.pages + 1);
+    auto meta = cast(ArrayAllocMetadata*)(ptr - blockSize);
+    ptr -= blockSize;
+    mainAllocator.free(ptr, meta.pages + 1);
 }

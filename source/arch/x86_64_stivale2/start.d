@@ -16,10 +16,10 @@ import arch.x86_64_stivale2.smp:         initSMP;
 import arch.x86_64_stivale2.cpu:         initCPULocals, initCPU;
 import lib.string:                       fromCString;
 import lib.panic:                        panic;
-import memory.physical:                  initPhysicalAllocator;
+import memory.physical:                  PhysicalAllocator;
 import archinterface:                    enableInterrupts, disableInterrupts;
 import kernelprotocol:                   KernelProtocol, KernelDevice;
-import main:                             kernelMain;
+import main:                             mainAllocator, kernelMain;
 
 debug import lib.debugtools: log;
 
@@ -45,7 +45,7 @@ extern (C) void start(Stivale2* proto) {
 
     debug log("Initializing freestanding memory management");
     auto protomemmap = translateStivaleMemmap(memmap);
-    initPhysicalAllocator(protomemmap);
+    mainAllocator    = PhysicalAllocator(protomemmap);
 
     debug log("Parsing basic ACPI information");
     initACPI(rsdp.rsdp);

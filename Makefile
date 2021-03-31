@@ -27,7 +27,7 @@ LDHARDFLAGS := $(LDFLAGS) --nostdlib -pie
 
 # Modify flags for the target.
 ifeq ($(ARCH), x86_64_stivale2)
-DHARDFLAGS := $(DHARDFLAGS) -mtriple=amd64-unknown-elf -code-model=large \
+DHARDFLAGS := $(DHARDFLAGS) -mtriple=amd64-unknown-elf \
 	-mattr=-sse,-sse2,-sse3,-ssse3 -disable-red-zone
 ASHARDFLAGS := $(ASHARDFLAGS) -felf64
 LDHARDFLAGS := $(LDHARDFLAGS) --oformat elf_amd64
