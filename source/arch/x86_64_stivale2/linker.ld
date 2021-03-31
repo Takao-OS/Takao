@@ -5,7 +5,7 @@ SECTIONS {
 
     /* Name required by spec. */
     .stivale2hdr : ALIGN(4K) {
-        KEEP(*(.stivaleh2dr))
+        KEEP(*(.stivale2hdr))
     }
 
     /* Actual kernel. */

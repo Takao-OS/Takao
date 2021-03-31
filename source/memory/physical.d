@@ -20,7 +20,7 @@ struct PhysicalAllocator {
     private size_t  lastUsedIndex;
 
     /// Construct the physical memory manager.
-    this(ref KernelMemoryMap memmap) {
+    this(const ref KernelMemoryMap memmap) {
         // First, calculate how big the bitmap needs to be.
         for (size_t i = 0; i < memmap.entryCount; i++) {
             const top = memmap.entries[i].base + memmap.entries[i].size;
@@ -31,9 +31,18 @@ struct PhysicalAllocator {
         const bitmapSize = divRoundUp(highestPage, blockSize) / 8;
 
         // Second, find a location with enough free pages to host the bitmap.
+        size_t bitmapEntry;
+        size_t realSize;
+        size_t realBase;
         foreach (i; 0..memmap.entryCount) {
+            if (!memmap.entries[i].isFree) {
+                continue;
+            }
             if (memmap.entries[i].size >= bitmapSize) {
-                bitmap = cast(size_t*)(memmap.entries[i].base);
+                bitmapEntry = i;
+                bitmap      = cast(size_t*)(memmap.entries[i].base);
+                realSize    = memmap.entries[i].size - bitmapSize;
+                realBase    = memmap.entries[i].base + bitmapSize;
 
                 // Initialise entire bitmap to 1 (non-free)
                 auto a = cast(ubyte*)bitmap;
@@ -41,17 +50,29 @@ struct PhysicalAllocator {
                     a[j] = 0xff;
                 }
 
-                memmap.entries[i].size -= bitmapSize;
-                memmap.entries[i].base += bitmapSize;
-
                 break;
             }
         }
 
         // Third, populate free bitmap entries according to memory map.
         foreach (i; 0..memmap.entryCount) {
-            for (ptrdiff_t j = 0; j < memmap.entries[i].size; j += blockSize) {
-                bitreset(bitmap, (memmap.entries[i].base + j) / blockSize);
+            if (memmap.entries[i].isFree) {
+                size_t base;
+                size_t size;
+                if (i == bitmapEntry) {
+                    size = realSize;
+                    base = realBase;
+                } else {
+                    size = memmap.entries[i].size;
+                    base = memmap.entries[i].base;
+                }
+                for (ptrdiff_t j = 0; j < size; j += blockSize) {
+                    bitreset(bitmap, (base + j) / blockSize);
+                }
+            } else {
+                for (ptrdiff_t j = 0; j < memmap.entries[i].size; j += blockSize) {
+                    bitset(bitmap, (memmap.entries[i].base + j) / blockSize);
+                }
             }
         }
     }
@@ -71,6 +92,7 @@ struct PhysicalAllocator {
                 p = 0;
             }
         }
+
         return null;
     }
 

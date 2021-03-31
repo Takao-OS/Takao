@@ -6,6 +6,7 @@ import display.window:  Window;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
 import memory.physical: PhysicalAllocator;
+import memory.virtual:  VirtualSpace;
 import storage.driver:  initStorageSubsystem;
 import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
@@ -14,6 +15,7 @@ debug import lib.debugtools: log;
 
 __gshared WM                mainWM;        /// Main window manager.
 __gshared PhysicalAllocator mainAllocator; /// Main allocator.
+__gshared VirtualSpace      mainMappings;  /// Main virtual mappings.
 
 /// Main function of the kernel.
 /// The state when the function is called must be:
@@ -27,6 +29,10 @@ void kernelMain(KernelProtocol proto) {
     debug log("Hi from the freestanding kernel!");
     debug proto.debugPrint();
     disableInterrupts();
+panic("A");
+    debug log("Creating and activating main mappings");
+    mainMappings = VirtualSpace(proto.mmap);
+    mainMappings.setActive();
 
     debug log("Starting WM");
     mainWM = WM(proto.fb);
@@ -47,7 +53,7 @@ void kernelMain(KernelProtocol proto) {
         }
     }
 
-    debug log("Starting refresh cycle");
+    debug log("Doing last minute preparations");
     enableInterrupts();
 
     const cores = getCoreCount();
@@ -63,6 +69,7 @@ void kernelMain(KernelProtocol proto) {
         }
     }
 
+    debug log("Starting refresh cycle");
     for (;;) {
         mainWM.refresh();
     }

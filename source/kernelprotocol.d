@@ -57,12 +57,13 @@ struct KernelMemoryMap {
 
 /// Memory entry.
 struct KernelMemoryEntry {
-    size_t base; /// Base of the memory range.
-    size_t size; /// Size of the memory range.
+    size_t base;   /// Base of the memory range.
+    size_t size;   /// Size of the memory range.
+    bool   isFree; /// Whether the entry is free or not.
 
     /// Print the struct contents to debug output.
     debug void debugPrint() {
-        log("[", cast(void*)base, " + ", cast(void*)size, "]");
+        log("[", cast(void*)base, " + ", cast(void*)size, "] - ", cast(size_t)isFree);
     }
 }
 

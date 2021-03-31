@@ -5,9 +5,11 @@ import kernelprotocol:      KernelFramebuffer;
 import display.cursor:      Cursor;
 import display.framebuffer: Framebuffer, Colour;
 import display.window:      Window;
-import memory.alloc:        allocate, resizeAllocation;
+import memory.virtual:      pageSize;
+import lib.math:            divRoundUp;
 import lib.lock:            Lock;
 import lib.list:            List;
+import main:                mainMappings;
 
 private struct WindowPackage {
     bool   isPresent;
@@ -38,9 +40,17 @@ struct WM {
         backBuffer  = Framebuffer(fb.width, fb.height, fb.pitch);
         frontBuffer = Framebuffer(fb.width, fb.height, fb.pitch);
         realBuffer  = Framebuffer(fb);
-        cursor      = Cursor(fb.width / 2, fb.height / 2);
-        windows     = List!WindowPackage(5);
-        isInit      = true;
+
+        // Map the framebuffer.
+        const fbPages = divRoundUp(fb.height * fb.pitch, pageSize);
+        foreach (i; 0..fbPages) {
+            const pageAddress = fb.address + (i * pageSize);
+            mainMappings.mapPage(pageAddress, pageAddress, 0x03);
+        }
+
+        cursor  = Cursor(fb.width / 2, fb.height / 2);
+        windows = List!WindowPackage(5);
+        isInit  = true;
         lock.release();
     }
 

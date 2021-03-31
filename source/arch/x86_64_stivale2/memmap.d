@@ -20,11 +20,9 @@ KernelMemoryMap translateStivaleMemmap(Stivale2Memmap* memmap) {
         if (memmapCount >= privateMemmap.length) {
             break;
         }
-        if (entry.type != Stivale2MemoryType.Usable) {
-            continue;
-        }
-        privateMemmap[memmapCount].base = entry.base;
-        privateMemmap[memmapCount].size = entry.length;
+        privateMemmap[memmapCount].base   = entry.base;
+        privateMemmap[memmapCount].size   = entry.length;
+        privateMemmap[memmapCount].isFree = entry.type == Stivale2MemoryType.Usable ? true : false; 
         memmapCount++;
     }
 
