@@ -37,6 +37,29 @@ extern (C) void* memcpy(void* dest, const void* src, size_t n) {
 
 /// Emitted as an optimization for memory operations.
 /// Params:
+///     dest = Destination of the move.
+///     src  = Source of the copy.
+///     n    = Numbers of bytes to move.
+/// Returns: Destination of the move.
+extern (C) void* memmove(void* dest, const void* src, size_t n) {
+    ubyte* pdest = cast(ubyte*)dest;
+    const  psrc  = cast(ubyte*)src;
+
+    if (src > dest) {
+        for (size_t i = 0; i < n; i++) {
+            pdest[i] = psrc[i];
+        }
+    } else if (src < dest) {
+        for (size_t i = n; i > 0; i--) {
+            pdest[i-1] = psrc[i-1];
+        }
+    }
+
+    return dest;
+}
+
+/// Emitted as an optimization for memory operations.
+/// Params:
 ///     s = Destination of the operation.
 ///     c = Value to set the memory region to.
 ///     n = Number of bytes to set.

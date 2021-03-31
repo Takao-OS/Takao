@@ -43,7 +43,6 @@ void initPS2Mouse() {
 
 private __gshared int            mouseCycle;
 private __gshared PS2MousePacket currentPacket;
-private __gshared bool           discardPacket;
 
 /// Handler to be called when a mouse movement is ready.
 extern (C) void mouseHandler() {
@@ -52,27 +51,21 @@ extern (C) void mouseHandler() {
 
     switch (mouseCycle) {
         case 0:
-            currentPacket.flags = mouseRead();
+            currentPacket.flags = inb(0x60);
+            if (currentPacket.flags & (1 << 6) || currentPacket.flags & (1 << 7)
+                || !(currentPacket.flags & (1 << 3))) {
+                mouseCycle = 0;
+                return;
+            }
             mouseCycle++;
-            if (currentPacket.flags & (1 << 6) || currentPacket.flags & (1 << 7)) {
-                discardPacket = true;
-            }
-            if (!(currentPacket.flags & (1 << 3))) {
-                discardPacket = true;
-            }
             break;
         case 1:
-            currentPacket.xMovement = mouseRead();
+            currentPacket.xMovement = inb(0x60);
             mouseCycle++;
             break;
         default:
-            currentPacket.yMovement = mouseRead();
+            currentPacket.yMovement = inb(0x60);
             mouseCycle              = 0;
-            if (discardPacket) {
-                discardPacket = false;
-                debug warn("Invalid mouse package");
-                break;
-            }
 
             bool isLeftClick;
             bool isRightClick;

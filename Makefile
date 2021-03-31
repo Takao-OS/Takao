@@ -21,14 +21,13 @@ LDFLAGS =
 # Hardflags and directories.
 ARCHDIR     := $(SOURCEDIR)/arch
 SARCHDIR    := $(ARCHDIR)/$(ARCH)
-DHARDFLAGS  := $(DFLAGS)  -relocation-model=pic -betterC -op -version=$(ARCH)
+DHARDFLAGS  := $(DFLAGS)  -relocation-model=pic -betterC -version=$(ARCH)
 ASHARDFLAGS := $(ASFLAGS) -felf64
 LDHARDFLAGS := $(LDFLAGS) --nostdlib -pie
 
 # Modify flags for the target.
 ifeq ($(ARCH), x86_64_stivale2)
-DHARDFLAGS := $(DHARDFLAGS) -mtriple=amd64-unknown-elf \
-	-mattr=-sse,-sse2,-sse3,-ssse3 -disable-red-zone
+DHARDFLAGS := $(DHARDFLAGS) -mtriple=amd64-unknown-elf -mattr=-sse,-sse2 -disable-red-zone
 ASHARDFLAGS := $(ASHARDFLAGS) -felf64
 LDHARDFLAGS := $(LDHARDFLAGS) --oformat elf_amd64
 endif

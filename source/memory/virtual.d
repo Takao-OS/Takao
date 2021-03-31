@@ -28,7 +28,7 @@ struct VirtualSpace {
         // the fucking LAPIC and basically everything ever if I dont then it can
         // fucking have it.
         for (size_t i = 0; i < 0x100000000; i += pageSize) {
-            mapPage(i, i, MapType.Supervisor);
+            innerMMU.mapPage(i, i, MapType.Supervisor);
         }
 
         // Identity map the whole memory map.
@@ -44,7 +44,7 @@ struct VirtualSpace {
                 if (addr < 0x100000000) {
                     continue;
                 }
-                mapPage(addr, addr, MapType.Supervisor);
+                innerMMU.mapPage(addr, addr, MapType.Supervisor);
             }
         }
     }

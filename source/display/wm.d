@@ -146,7 +146,6 @@ struct WM {
         if (isAlt) {
             switch (c) {
                 case 'n': createWindow("New window"); break;
-                case 'd': removeWindow(0);            break;
                 default:                              break;
             }
         }

@@ -13,12 +13,12 @@ debug {
 
 /// Enables interruptions for the current core.
 void enableInterrupts() {
-    asm { sti; }
+    asm { naked; sti; ret; }
 }
 
 /// Disables interruptions for the current core.
 void disableInterrupts() {
-    asm { cli; }
+    asm { naked; cli; ret; }
 }
 
 /// Makes a core sleep by at least the passed ammount of miliseconds.
@@ -74,11 +74,12 @@ size_t getCurrentCore() {
 
 /// Drive the current core into an unrecoverable state.
 void killCore() {
-    while (true) {
-        asm {
-            cli;
-            hlt;
-        }
+    asm {
+        naked;
+    L1:
+        cli;
+        hlt;
+        jmp L1;
     }
 }
 
