@@ -100,6 +100,26 @@ struct WM {
         return wh;
     }
 
+    /// Fetch window for modifying.
+    /// Params:
+    ///     window = Window handle.
+    /// Returns: Window pointer or null if not found.
+    Window* fetchWindow(int window) {
+        assert(window != -1);
+
+        Window* ret = null;
+        foreach (i; 0..windows.length) {
+            if (windows[i].isPresent && windows[i].wh == window) {
+                ret = &windows[i].inner;
+                goto end;
+            }
+        }
+
+    end:
+        lock.release();
+        return ret;
+    }
+
     /// Remove a window.
     /// Params:
     ///     window = Window to remove, never -1.
@@ -107,7 +127,7 @@ struct WM {
         assert(window != -1);
         lock.acquire();
         foreach (i; 0..windows.length) {
-            if (!windows[i].isPresent && windows[i].wh == window) {
+            if (windows[i].isPresent && windows[i].wh == window) {
                 windows[i].isPresent = false;
                 goto ret;
             }
@@ -122,7 +142,7 @@ struct WM {
         backBuffer.clear(wmBackground);
         foreach_reverse (i; 0..windows.length) {
             if (windows[i].isPresent) {
-                windows[i].inner.draw(&backBuffer);
+                windows[i].inner.draw(backBuffer);
             }
         }
         cursor.draw(backBuffer);
@@ -145,8 +165,19 @@ struct WM {
     void keyboardEvent(bool isAlt, char c) {
         if (isAlt) {
             switch (c) {
-                case 'n': createWindow("New window"); break;
-                default:                              break;
+                case 'n':
+                    createWindow("New window");
+                    break;
+                case 'd':
+                    foreach (i; 0..windows.length) {
+                        if (windows[i].isPresent) {
+                            windows[i].isPresent = false;
+                            break;
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
     }
@@ -172,8 +203,6 @@ struct WM {
                         w.resize(xVariation, yVariation, false);
                     } else if (w.isInRightBorders(cursorX, cursorY)) {
                         w.resize(xVariation, yVariation);
-                    } else {
-                        w.putPixel(cursorX, cursorY, 0xffffff);
                     }
                     break;
                 } else {

@@ -1,60 +1,54 @@
 /// The window struct and window utilities.
 module display.window;
 
+import lib.list:            List;
 import display.framebuffer: Framebuffer, Colour;
-import memory.alloc:        allocate, free, resizeAllocationAbs;
 
-private immutable titleBarFontColour    = 0xffffff;
-private immutable focusedTitleBarColour = 0xff8888;
-private immutable defaultTitleBarColour = 0x888888;
+private immutable titleFontColour        = 0xffffff;
+private immutable focusedTitleBackground = 0xff8888;
+private immutable titleBackground        = 0x888888;
+private immutable windowBackground       = 0xdddddd;
+private immutable fontColour             = 0x000000;
+
+/// Text widget.
+struct TextWidget {
+    bool   isCenterHeight; /// Whether the widget is centered in height.
+    bool   isCenterWidth;  /// Whether the widget is centered in width.
+    ubyte  heightPercent;  /// Percentage of the string in height.
+    ubyte  widthPercent;   /// Percentage of the position in width.
+    string message;        /// Message to print.
+}
 
 /// Struct that represents a window.
 struct Window {
-    private bool    isFocused;
-    private string  titleString;
-    private size_t  windowX;
-    private size_t  windowY;
-    private size_t  canvasWidth;
-    private size_t  canvasHeight;
-    private bool    isCanvasOurs;
-    private bool    needsResize;
-    private Colour* canvas;
+    private bool            isInitialized;
+    private bool            isFocused;
+    private string          titleString;
+    private size_t          windowX;
+    private size_t          windowY;
+    private size_t          canvasWidth;
+    private size_t          canvasHeight;
+    private List!TextWidget textWidgets;
 
     /// Creates the object.
     this(string title, size_t windowWidth, size_t windowHeight) {
-        isFocused    = false;
-        titleString  = title;
-        windowX      = 30;
-        windowY      = 30;
-        canvasWidth  = windowWidth;
-        canvasHeight = windowHeight;
-        isCanvasOurs = true;
-        needsResize  = false;
-        canvas       = allocate!Colour(canvasWidth * canvasHeight);
+        isInitialized = true;
+        titleString   = title;
+        windowX       = 30;
+        windowY       = 30;
+        canvasWidth   = windowWidth;
+        canvasHeight  = windowHeight;
+        textWidgets   = List!TextWidget(2);
     }
 
-    /// Delete the object.
-    ~this() {
-        if (isCanvasOurs) {
-            free(canvas);
-        }
+    /// Add widget.
+    void addWidget(TextWidget widget) {
+        textWidgets.push(widget);
     }
-
-    /// Get the canvas.
-    @property Colour* userCanvas() { return canvas; }
-    /// Get the canvas width.
-    @property size_t userCanvasWidth() { return canvasWidth; }
-    /// Get the canvas height.
-    @property size_t userCanvasHeight() { return canvasHeight; }
 
     /// Draw window.
-    void draw(Framebuffer *fb) {
+    void draw(ref Framebuffer fb) {
         import display.font: fontWidth, fontHeight;
-
-        if (needsResize) {
-            resizeAllocationAbs(&canvas, canvasWidth * canvasHeight);
-            needsResize = false;
-        }
 
         // Readjust ourselves if needed.
         if (windowX >= fb.width) {
@@ -70,19 +64,52 @@ struct Window {
             windowY = fb.height - canvasHeight - fontHeight;
         }
 
-        // Title work.
-        auto colour = isFocused ? focusedTitleBarColour : defaultTitleBarColour;
+        // Title and border work.
+        auto colour = isFocused ? focusedTitleBackground : titleBackground;
         foreach (i; 0..canvasWidth) {
             foreach (j; 0..fontHeight) {
                 fb.putPixel(windowX + i, windowY + j, colour);
             }
         }
-        fb.drawString(windowX, windowY, titleString, titleBarFontColour, colour);
+        fb.drawString(windowX, windowY, titleString, titleFontColour, colour);
+        foreach (i; 0..(canvasHeight + fontHeight)) {
+            fb.putPixel(windowX - 1,           windowY + i, colour);
+            fb.putPixel(windowX + canvasWidth, windowY + i, colour);
+        }
+        foreach (i; 0..canvasWidth) {
+            fb.putPixel(windowX + i, windowY + canvasHeight + fontHeight, colour);
+        }
 
-        // Canvas.
+        // Background of the window.
         foreach (i; 0..canvasWidth) {
             foreach (j; 0..canvasHeight) {
-                fb.putPixel(windowX + i, windowY + fontHeight + j, canvas[i + canvasWidth * j]);
+                fb.putPixel(windowX + i, windowY + fontHeight + j, windowBackground);
+            }
+        }
+
+        // Draw text widgets.
+        foreach (i; 0..textWidgets.length) {
+            const len = textWidgets[i].message.length;
+            size_t x;
+            size_t y;
+            if (textWidgets[i].isCenterWidth) {
+                x = (canvasWidth / 2) - (len / 2 * fontWidth);
+            } else {
+                x = textWidgets[i].widthPercent * canvasWidth  / 100;
+            }
+            if (textWidgets[i].isCenterHeight) {
+                y = canvasHeight / 2;
+            } else {
+                y = textWidgets[i].heightPercent * canvasHeight / 100;
+            }
+            x += windowX;
+            y += windowY + fontHeight;
+            for (size_t j = 0; j < textWidgets[i].message.length; j++) {
+                const finalX = x + (j * fontWidth);
+                if (finalX < windowX || (finalX + fontWidth) > windowX + canvasWidth) {
+                    continue;
+                } 
+                fb.drawCharacter(finalX, y, textWidgets[i].message[j], fontColour, windowBackground);
             }
         }
     }
@@ -91,12 +118,6 @@ struct Window {
     void move(int differenceX, int differenceY) {
         windowX += differenceX;
         windowY += differenceY;
-    }
-
-    /// Set the canvas to a custom one.
-    void setCanvas(Colour *c) {
-        isCanvasOurs = false;
-        canvas       = c;
     }
 
     /// Resize window, by default from the right.
@@ -117,10 +138,6 @@ struct Window {
                 windowY      += yVariation;
                 canvasHeight -= yVariation;
             }
-        }
-
-        if (isCanvasOurs) {
-            needsResize = true;
         }
     }
 
@@ -151,13 +168,5 @@ struct Window {
     bool isInRightBorders(size_t x, size_t y) {
         import display.font: fontWidth, fontHeight;
         return x == windowX + canvasWidth && y >= windowY && y <= canvasHeight + windowY + fontHeight;
-    }
-
-    /// Put pixel in canvas, its assumed to be in the window.
-    void putPixel(size_t x, size_t y, Colour colour) {
-        import display.font: fontHeight;
-        size_t positionX = x - windowX;
-        size_t positionY = y - windowY - fontHeight;
-        canvas[positionX + canvasWidth * positionY] = colour;
     }
 }

@@ -2,7 +2,7 @@
 module main;
 
 import display.wm:      WM;
-import display.window:  Window;
+import display.window:  Window, TextWidget;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
 import memory.physical: PhysicalAllocator;
@@ -56,18 +56,21 @@ void kernelMain(KernelProtocol proto) {
     debug log("Doing last minute preparations");
     enableInterrupts();
 
-    const cores = getCoreCount();
-    const curr  = getCurrentCore();
-    foreach (i; 0..cores) {
-        if (i == curr) {
-            mainWM.createWindow("Hey its current!");
-        } else {
-            executeCore(i, () {
-                mainWM.createWindow("Lol");
-                killCore();
-            });
-        }
+    auto wh = mainWM.createWindow("Hello!");
+    if (wh == -1) {
+        panic("Could not create window");
     }
+    auto win = mainWM.fetchWindow(wh);
+    if (win == null) {
+        panic("Could not fetch welcome window");
+    }
+    win.resize(100, 100);
+    win.addWidget(TextWidget(false, true, 30, 0, "Welcome to TakaoOS!"));
+    win.addWidget(TextWidget(false, true, 50, 0, "And to everyone in OSDev, yes, this is in ring 0"));
+    win.addWidget(TextWidget(false, true, 55, 0, "Fight me"));
+    win.addWidget(TextWidget(false, true, 70, 0, "Have a nice time around!"));
+    win.addWidget(TextWidget(false, true, 85, 0, "Alt + n = New window"));
+    win.addWidget(TextWidget(false, true, 90, 0, "Alt + d = Delete window"));
 
     debug log("Starting refresh cycle");
     for (;;) {
