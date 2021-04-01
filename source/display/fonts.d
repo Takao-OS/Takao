@@ -65,6 +65,7 @@ struct PSFont {
         fontHeight = header.height;
         fontWidth  = header.width;
         isInit     = true;
+        success    = true;
     }
 
     ~this() {

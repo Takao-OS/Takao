@@ -13,6 +13,11 @@ import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCo
 import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
 
+// TODO: Make this drive agnostic.
+private immutable boldFontPath    = "ata0:0:bold.psf";
+private immutable cursiveFontPath = "ata0:0:cursive.psf";
+private immutable sansFontPath    = "ata0:0:sans.psf";
+
 __gshared WM                mainWM;        /// Main window manager.
 __gshared PhysicalAllocator mainAllocator; /// Main allocator.
 __gshared VirtualSpace      mainMappings;  /// Main virtual mappings.
@@ -55,6 +60,9 @@ void kernelMain(KernelProtocol proto) {
 
     debug log("Doing last minute preparations");
     enableInterrupts();
+    mainWM.loadBoldFont(boldFontPath);
+    mainWM.loadCursiveFont(cursiveFontPath);
+    mainWM.loadSansFont(sansFontPath);
 
     auto wh = mainWM.createWindow("Hello!");
     if (wh == -1) {

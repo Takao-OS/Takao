@@ -5,6 +5,8 @@ import kernelprotocol:      KernelFramebuffer;
 import display.cursor:      Cursor;
 import display.framebuffer: Framebuffer, Colour;
 import display.window:      Window;
+import display.fonts:       PSFont;
+import display.defaultfont: fontHeight, fontWidth, getFontCharacter;
 import memory.virtual:      pageSize, MapType;
 import lib.math:            divRoundUp;
 import lib.lock:            Lock;
@@ -16,11 +18,6 @@ private struct WindowPackage {
     int    wh;
     Window inner;
 }
-
-// TODO: Make this drive agnostic.
-private immutable boldFontPath    = "ata0:0:bold.psf";
-private immutable cursiveFontPath = "ata0:0:cursive.psf";
-private immutable sansFontPath    = "ata0:0:sans.psf";
 
 private immutable loadingBackground = 0x000000;
 private immutable loadingFontColour = 0xffffff;
@@ -39,6 +36,12 @@ struct WM {
     private Framebuffer        realBuffer;
     private Cursor             cursor;
     private List!WindowPackage windows;
+    private bool               hasBold;
+    private PSFont             boldFont;
+    private bool               hasCursive;
+    private PSFont             cursiveFont;
+    private bool               hasSans;
+    private PSFont             sansFont;
 
     /// Create a WM for a physical framebuffer.
     this(const ref KernelFramebuffer fb) {
@@ -53,10 +56,34 @@ struct WM {
             mainMappings.mapPage(pageAddress, pageAddress, MapType.Supervisor | MapType.WriteCombine);
         }
 
-        cursor  = Cursor(fb.width / 2, fb.height / 2);
-        windows = List!WindowPackage(5);
-        isInit  = true;
+        cursor     = Cursor(fb.width / 2, fb.height / 2);
+        windows    = List!WindowPackage(5);
+        hasBold    = false;
+        hasCursive = false;
+        hasSans    = false;
+        isInit     = true;
         lock.release();
+    }
+
+    /// Load a bold font.
+    bool loadBoldFont(string path) {
+        assert(path != null);
+        boldFont = PSFont(path, hasBold);
+        return hasBold;
+    }
+
+    /// Load a cursive font.
+    bool loadCursiveFont(string path) {
+        assert(path != null);
+        cursiveFont = PSFont(path, hasCursive);
+        return hasCursive;
+    }
+
+    /// Load a sans font.
+    bool loadSansFont(string path) {
+        assert(path != null);
+        sansFont = PSFont(path, hasSans);
+        return hasSans;
     }
 
     /// Display the loading screen, or do nothing if not initialized.
