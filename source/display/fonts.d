@@ -77,6 +77,6 @@ struct PSFont {
     ubyte[] getFontCharacter(char c) {
         const index = header.bytesperglyph * c;
         const end   = index + header.bytesperglyph;
-        return font[index..end];
+        return fontInner[index..end];
     }
 }

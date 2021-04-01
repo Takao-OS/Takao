@@ -15,6 +15,7 @@ TIMEOUT=0
 :Takao
 KERNEL_PATH=boot:///takao
 PROTOCOL=stivale2
+CMDLINE=root=ata0:0
 EOF
 
 [ -d $LIMINE_DIR ] || \

@@ -5,6 +5,7 @@ import display.wm:      WM;
 import display.window:  Window, TextWidget;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
+import lib.string:      buildStringInPlace, fromCString;
 import memory.physical: PhysicalAllocator;
 import memory.virtual:  VirtualSpace;
 import storage.driver:  initStorageSubsystem;
@@ -14,9 +15,9 @@ import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
 
 // TODO: Make this drive agnostic.
-private immutable boldFontPath    = "ata0:0:bold.psf";
-private immutable cursiveFontPath = "ata0:0:cursive.psf";
-private immutable sansFontPath    = "ata0:0:sans.psf";
+private immutable boldFontPath    = ":bold.psf";
+private immutable cursiveFontPath = ":cursive.psf";
+private immutable sansFontPath    = ":sans.psf";
 
 __gshared WM                mainWM;        /// Main window manager.
 __gshared PhysicalAllocator mainAllocator; /// Main allocator.
@@ -46,23 +47,35 @@ void kernelMain(KernelProtocol proto) {
     debug log("Starting storage subsystem");
     initStorageSubsystem();
 
-    debug log("Loading init if any");
+    debug log("Fetch commandline options");
+    string init;
+    string root;
     if (proto.cmdline != null) {
-        const init = getCmdlineOption(proto.cmdline, "useInit");
-        if (init != null) {
-            const fd = open(init, FileMode.Read);
-            if (fd == -1) {
-                panic("Could not open init");
-            }
-            close(fd);
+        init = getCmdlineOption(proto.cmdline, "init");
+        root = getCmdlineOption(proto.cmdline, "root");
+    }
+
+    debug log("Loading init if any");
+    if (init != null) {
+        const fd = open(init, FileMode.Read);
+        if (fd == -1) {
+            panic("Could not open init");
         }
+        close(fd);
     }
 
     debug log("Doing last minute preparations");
     enableInterrupts();
-    mainWM.loadBoldFont(boldFontPath);
-    mainWM.loadCursiveFont(cursiveFontPath);
-    mainWM.loadSansFont(sansFontPath);
+    if (root != null) {
+        char[256] path;
+        size_t    len;
+        len = buildStringInPlace(path.ptr, path.length, root, boldFontPath); 
+        mainWM.loadBoldFont(fromCString(path.ptr, len));
+        len = buildStringInPlace(path.ptr, path.length, root, cursiveFontPath);
+        mainWM.loadCursiveFont(fromCString(path.ptr, len));
+        len = buildStringInPlace(path.ptr, path.length, root, sansFontPath);
+        mainWM.loadSansFont(fromCString(path.ptr, len));
+    }
 
     auto wh = mainWM.createWindow("Hello!");
     if (wh == -1) {

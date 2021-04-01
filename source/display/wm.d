@@ -171,10 +171,14 @@ struct WM {
     /// Refresh the WM.
     void refresh() {
         // Draw everything.
+        auto bold = hasBold    ? &boldFont    : null;
+        auto curs = hasCursive ? &cursiveFont : null;
+        auto sans = hasSans    ? &sansFont    : null;
+
         backBuffer.clear(wmBackground);
         foreach_reverse (i; 0..windows.length) {
             if (windows[i].isPresent) {
-                windows[i].inner.draw(backBuffer);
+                windows[i].inner.draw(bold, curs, sans, backBuffer);
             }
         }
         cursor.draw(backBuffer);

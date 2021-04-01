@@ -3,6 +3,7 @@ module display.window;
 
 import lib.list:            List;
 import display.framebuffer: Framebuffer, Colour;
+import display.fonts:       PSFont;
 
 private immutable titleFontColour        = 0xffffff;
 private immutable focusedTitleBackground = 0xff8888;
@@ -47,7 +48,12 @@ struct Window {
     }
 
     /// Draw window.
-    void draw(ref Framebuffer fb) {
+    /// Params:
+    ///     bold    = Bold font to use, null if none.
+    ///     cursive = Cursive font to use, null if none.
+    ///     sans    = Sans font to use, null if none.
+    ///     fb      = Framebuffer to print to.
+    void draw(PSFont* bold, PSFont* cursive, PSFont* sans, ref Framebuffer fb) {
         import display.defaultfont: fontWidth, fontHeight;
 
         // Readjust ourselves if needed.

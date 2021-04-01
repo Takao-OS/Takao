@@ -5,7 +5,8 @@
 The kernel takes on most targets a command line for passing options and values
 for the kernel, here they are all documented.
 
-* `init=path`: Path to execute once the kernel is loaded, if any.
+* `init=path`: Full path to run once the kernel is loaded, if any.
+* `root=path`: Full path of the kernel resources, by default none.
 
 ## Syscall interface
 
