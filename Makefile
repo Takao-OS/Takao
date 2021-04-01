@@ -8,26 +8,26 @@ BUILDDIR  := build
 TESTDIR   := test
 
 # Compilers, several programs and user flags.
-ARCH    = x86_64_stivale2
-DC      = ldmd2
-AS      = nasm
-LD      = ld.lld
-DESTDIR =
-PREFIX  = /boot
-DFLAGS  = -d-debug
-ASFLAGS =
-LDFLAGS =
+ARCH ?= x86_64_stivale2
+DC = ldmd2
+AS = nasm
+LD = ld.lld
+DESTDIR ?=
+PREFIX  ?= /boot
+DFLAGS  ?= -d-debug
+ASFLAGS ?=
+LDFLAGS ?=
 
 # Hardflags and directories.
 ARCHDIR     := $(SOURCEDIR)/arch
 SARCHDIR    := $(ARCHDIR)/$(ARCH)
 DHARDFLAGS  := $(DFLAGS)  -relocation-model=pic -betterC -version=$(ARCH)
-ASHARDFLAGS := $(ASFLAGS) -felf64
+ASHARDFLAGS := $(ASFLAGS)
 LDHARDFLAGS := $(LDFLAGS) --nostdlib -pie
 
 # Modify flags for the target.
 ifeq ($(ARCH), x86_64_stivale2)
-DHARDFLAGS := $(DHARDFLAGS) -mtriple=amd64-unknown-elf -mattr=-sse,-sse2 -disable-red-zone
+DHARDFLAGS  := $(DHARDFLAGS)  -mtriple=amd64-unknown-elf -mattr=-sse,-sse2 -disable-red-zone
 ASHARDFLAGS := $(ASHARDFLAGS) -felf64
 LDHARDFLAGS := $(LDHARDFLAGS) --oformat elf_amd64
 endif
