@@ -1,7 +1,6 @@
-/// Utilities for displaying and using fonts.
-module display.font;
-
-import display.framebuffer: Framebuffer, Colour;
+/// Default bitmap font cooked into the executable to use in case we have
+/// nothing else.
+module display.defaultfont;
 
 immutable fontHeight = 16; /// Height of the font in pixels.
 immutable fontWidth  = 8;  /// Width of the font in pixels.
@@ -353,10 +352,9 @@ private __gshared ubyte[] font = [
     0x1a, 0x02, 0x02, 0x3c
 ];
 
-/// Get character from font.
 ubyte[] getFontCharacter(char c) {
-    const auto charSize = ((fontWidth * fontHeight) / 8);
-    const auto index    = charSize * c;
-    const auto end      = index + charSize;
+    const charSize = ((fontWidth * fontHeight) / 8);
+    const index    = charSize * c;
+    const end      = index + charSize;
     return font[index..end];
 }

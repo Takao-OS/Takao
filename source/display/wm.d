@@ -17,6 +17,11 @@ private struct WindowPackage {
     Window inner;
 }
 
+// TODO: Make this drive agnostic.
+private immutable boldFontPath    = "ata0:0:bold.psf";
+private immutable cursiveFontPath = "ata0:0:cursive.psf";
+private immutable sansFontPath    = "ata0:0:sans.psf";
+
 private immutable loadingBackground = 0x000000;
 private immutable loadingFontColour = 0xffffff;
 private immutable panicBackground   = 0xff0000;
@@ -66,7 +71,7 @@ struct WM {
     /// Params:
     ///     message = Message to print, never null.
     void panicScreen(string message) {
-        import display.font: fh = fontHeight;
+        import display.defaultfont: fh = fontHeight;
         assert(message != null);
         if (!isInit) {
             return;

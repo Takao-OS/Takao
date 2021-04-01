@@ -64,8 +64,8 @@ struct Framebuffer {
 
     /// Draw character from font straight to the framebuffer using coordinates.
     void drawCharacter(size_t fbX, size_t fbY, char c, Colour fg, Colour bg) {
-        import lib.bit:      bittest;
-        import display.font: getFontCharacter, fontHeight, fontWidth;
+        import lib.bit:             bittest;
+        import display.defaultfont: getFontCharacter, fontHeight, fontWidth;
 
         const auto character = getFontCharacter(c);
         foreach (int y; 0..fontHeight) {
@@ -79,7 +79,7 @@ struct Framebuffer {
 
     /// Draw a string straight to the passed framebuffer using coordinates.
     void drawString(size_t fbX, size_t fbY, string s, Colour fg, Colour bg) {
-        import display.font: fontWidth;
+        import display.defaultfont: fontWidth;
         for (size_t i = 0; i < s.length; i++) {
             drawCharacter(fbX + (i * fontWidth), fbY, s[i], fg, bg);
         }

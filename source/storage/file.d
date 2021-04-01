@@ -155,10 +155,23 @@ ptrdiff_t read(FileDescriptor fd, ubyte* output, size_t count) {
         if (files[fd].currLocation >= files[fd].fileLength) {
             break;
         }
-        debug log(files[fd].fileData[files[fd].currLocation]);
         output[i] = files[fd].fileData[files[fd].currLocation++];
     }
     return i;
+}
+
+/// Length of the file in bytes.
+/// Params:
+///     fd = File to get length of.
+/// Returns: -1 if error, length else.
+size_t length(FileDescriptor fd) {
+    assert(fd != -1);
+
+    if (fd < 0 || fd > fileCount - 1) {
+        return -1;
+    }
+
+    return files[fd].fileLength;
 }
 
 /// Write data to a file, only write and append permissions can write.

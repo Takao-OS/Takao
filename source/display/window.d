@@ -48,7 +48,7 @@ struct Window {
 
     /// Draw window.
     void draw(ref Framebuffer fb) {
-        import display.font: fontWidth, fontHeight;
+        import display.defaultfont: fontWidth, fontHeight;
 
         // Readjust ourselves if needed.
         if (windowX >= fb.width) {
@@ -148,25 +148,25 @@ struct Window {
 
     /// Check if an absolute pair of coordinates is in the titlebar.
     bool isTitleBar(size_t x, size_t y) {
-        import display.font: fontWidth, fontHeight;
+        import display.defaultfont: fontWidth, fontHeight;
         return x >= windowX && x <= windowX + canvasWidth && y >= windowY && y <= windowY + fontHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the window, includes titlebar.
     bool isInWindow(size_t x, size_t y) {
-        import display.font: fontWidth, fontHeight;
+        import display.defaultfont: fontWidth, fontHeight;
         return x >= windowX && x <= windowX + canvasWidth && y >= windowY && y <= windowY + fontHeight + canvasHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the left borders.
     bool isInLeftBorders(size_t x, size_t y) {
-        import display.font: fontWidth, fontHeight;
+        import display.defaultfont: fontWidth, fontHeight;
         return x == windowX && y >= windowY && y <= canvasHeight + windowY + fontHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the left borders.
     bool isInRightBorders(size_t x, size_t y) {
-        import display.font: fontWidth, fontHeight;
+        import display.defaultfont: fontWidth, fontHeight;
         return x == windowX + canvasWidth && y >= windowY && y <= canvasHeight + windowY + fontHeight;
     }
 }
