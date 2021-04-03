@@ -234,6 +234,10 @@ struct WM {
                     windows[0].inner.setFocused(true);
                     auto w = &windows[0].inner; 
                     if (w.isTitleBar(cursorX, cursorY)) {
+                        if (cursorX == 0 || cursorY == 0 ||
+                            cursorX >= realBuffer.width - 1 || cursorY >= realBuffer.height - 1) {
+                            return;
+                        }
                         w.move(xVariation, yVariation);
                     } else if (w.isInLeftBorders(cursorX, cursorY)) {
                         w.resize(xVariation, yVariation, false);

@@ -14,7 +14,6 @@ import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCo
 import kernelprotocol:  KernelProtocol;
 debug import lib.debugtools: log;
 
-// TODO: Make this drive agnostic.
 private immutable boldFontPath    = ":bold.psf";
 private immutable cursiveFontPath = ":cursive.psf";
 private immutable sansFontPath    = ":sans.psf";
@@ -31,7 +30,7 @@ __gshared VirtualSpace      mainMappings;  /// Main virtual mappings.
 ///     - The memory allocator must be already initialized, this is done for
 ///       ports that might require memory management for hardware initialization
 ///       purposes.
-void kernelMain(KernelProtocol proto) {
+void kernelMain(const ref KernelProtocol proto) {
     debug log("Hi from the freestanding kernel!");
     debug proto.debugPrint();
     disableInterrupts();

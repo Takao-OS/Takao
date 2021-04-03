@@ -46,8 +46,12 @@ struct Framebuffer {
     }
 
     /// Put pixel on coordinates.
-    void putPixel(size_t x, size_t y, Colour c) {
-        if (x >= width || y >= height) {
+    /// Params:
+    ///     x = Coordinate in the framebuffer, negatives will be ignored.
+    ///     y = Coordinate in the framebuffer, negatives will be ignored.
+    ///     c = Colour to print.
+    void putPixel(long x, long y, Colour c) {
+        if (x >= width || y >= height || x < 0 || y < 0) {
             return;
         }
         auto position = x + pitch * y;
@@ -63,7 +67,7 @@ struct Framebuffer {
     }
 
     /// Draw character from font straight to the framebuffer using coordinates.
-    void drawCharacter(size_t fbX, size_t fbY, char c, Colour fg, Colour bg) {
+    void drawCharacter(long fbX, long fbY, char c, Colour fg, Colour bg) {
         import lib.bit:             bittest;
         import display.defaultfont: getFontCharacter, fontHeight, fontWidth;
 
@@ -78,9 +82,9 @@ struct Framebuffer {
     }
 
     /// Draw a string straight to the passed framebuffer using coordinates.
-    void drawString(size_t fbX, size_t fbY, string s, Colour fg, Colour bg) {
+    void drawString(long fbX, long fbY, string s, Colour fg, Colour bg) {
         import display.defaultfont: fontWidth;
-        for (size_t i = 0; i < s.length; i++) {
+        foreach (long i; 0..s.length) {
             drawCharacter(fbX + (i * fontWidth), fbY, s[i], fg, bg);
         }
     }

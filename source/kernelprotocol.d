@@ -11,7 +11,7 @@ struct KernelProtocol {
     KernelDeviceMap   devices; /// Devices to be used by the kernel.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         log("Command line: '", cmdline, "'");
         log("Framebuffer:");
         fb.debugPrint();
@@ -31,7 +31,7 @@ struct KernelFramebuffer {
     ushort bpp;     /// Bytes per pixel.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         log("Address: ", cast(void*)address);
         log("Width:   ", width);
         log("Height:  ", height);
@@ -48,7 +48,7 @@ struct KernelMemoryMap {
     KernelMemoryEntry* entries;    /// Actual entries.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         foreach (i; 0..entryCount) {
             entries[i].debugPrint();
         }
@@ -62,7 +62,7 @@ struct KernelMemoryEntry {
     bool   isFree; /// Whether the entry is free or not.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         log("[", cast(void*)base, " + ", cast(void*)size, "] - ", cast(size_t)isFree);
     }
 }
@@ -73,7 +73,7 @@ struct KernelDeviceMap {
     KernelDevice* devices;     /// Actual devices.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         foreach (i; 0..deviceCount) {
             devices[i].debugPrint();
         }
@@ -86,7 +86,7 @@ struct KernelDevice {
     size_t[4] mmioRegs; /// Addresses to be used by the driver, take this as arguments.
 
     /// Print the struct contents to debug output.
-    debug void debugPrint() {
+    debug void debugPrint() const {
         log("'", driver, "' using addresses:");
         foreach (i; mmioRegs) {
             log(i);

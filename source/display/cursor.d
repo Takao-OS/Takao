@@ -44,16 +44,16 @@ struct Cursor {
     void update(int xVariation, int yVariation, size_t height, size_t width) {
         if (cursorX + xVariation < 0) {
             cursorX = 0;
-        } else if (cursorX + xVariation + cursorWidth >= width) {
-            cursorX = width - 1 - cursorWidth;
+        } else if (cursorX + xVariation >= width) {
+            cursorX = width - 1;
         } else {
             cursorX += xVariation;
         }
 
         if (cursorY + yVariation < 0) {
             cursorY = 0;
-        } else if (cursorY + yVariation + cursorHeight >= height) {
-            cursorY = height - 1 - cursorHeight;
+        } else if (cursorY + yVariation >= height) {
+            cursorY = height - 1;
         } else {
             cursorY += yVariation;
         }

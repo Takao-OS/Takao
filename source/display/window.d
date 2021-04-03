@@ -2,14 +2,15 @@
 module display.window;
 
 import lib.list:            List;
+import display.defaultfont: fontHeight, fontWidth, getFontCharacter;
 import display.framebuffer: Framebuffer, Colour;
 import display.fonts:       PSFont;
 
-private immutable titleFontColour        = 0xffffff;
-private immutable focusedTitleBackground = 0xff8888;
-private immutable titleBackground        = 0x888888;
-private immutable windowBackground       = 0xdddddd;
-private immutable fontColour             = 0x000000;
+private immutable titleFontColour    = 0xffffff;
+private immutable focusedTitleBorder = 0xff8888;
+private immutable titleBorder        = 0x888888;
+private immutable windowBackground   = 0xdddddd;
+private immutable fontColour         = 0x000000;
 
 /// Text widget.
 struct TextWidget {
@@ -25,8 +26,8 @@ struct Window {
     private bool            isInitialized;
     private bool            isFocused;
     private string          titleString;
-    private size_t          windowX;
-    private size_t          windowY;
+    private long            windowX;
+    private long            windowY;
     private size_t          canvasWidth;
     private size_t          canvasHeight;
     private List!TextWidget textWidgets;
@@ -56,22 +57,10 @@ struct Window {
     void draw(PSFont* bold, PSFont* cursive, PSFont* sans, ref Framebuffer fb) {
         import display.defaultfont: fontWidth, fontHeight;
 
-        // Readjust ourselves if needed.
-        if (windowX >= fb.width) {
-            windowX = 0;
-        }
-        if (windowX + canvasWidth >= fb.width) {
-            windowX = fb.width - canvasWidth;
-        }
-        if (windowY >= fb.height) {
-            windowY = 0;
-        }
-        if (windowY + canvasHeight + fontHeight >= fb.height) {
-            windowY = fb.height - canvasHeight - fontHeight;
-        }
-
         // Title and border work.
-        auto colour = isFocused ? focusedTitleBackground : titleBackground;
+        import lib.debugtools: log;
+
+        auto colour = isFocused ? focusedTitleBorder : titleBorder;
         foreach (i; 0..canvasWidth) {
             foreach (j; 0..fontHeight) {
                 fb.putPixel(windowX + i, windowY + j, colour);
@@ -95,27 +84,27 @@ struct Window {
 
         // Draw text widgets.
         foreach (i; 0..textWidgets.length) {
-            const len = textWidgets[i].message.length;
-            size_t x;
-            size_t y;
+            const msg = textWidgets[i].message;
+            const len = msg.length;
+            long x;
+            long y;
             if (textWidgets[i].isCenterWidth) {
                 x = (canvasWidth / 2) - (len / 2 * fontWidth);
             } else {
-                x = textWidgets[i].widthPercent * canvasWidth  / 100;
+                x = textWidgets[i].widthPercent * canvasWidth / 100;
             }
             if (textWidgets[i].isCenterHeight) {
                 y = canvasHeight / 2;
             } else {
                 y = textWidgets[i].heightPercent * canvasHeight / 100;
             }
-            x += windowX;
-            y += windowY + fontHeight;
-            for (size_t j = 0; j < textWidgets[i].message.length; j++) {
+
+            for (long j = 0; j < len; j++) {
                 const finalX = x + (j * fontWidth);
-                if (finalX < windowX || (finalX + fontWidth) > windowX + canvasWidth) {
+                if (finalX < 0 || finalX + fontWidth > canvasWidth) {
                     continue;
-                } 
-                fb.drawCharacter(finalX, y, textWidgets[i].message[j], fontColour, windowBackground);
+                }
+                fb.drawCharacter(windowX + finalX, windowY + y, msg[j], fontColour, windowBackground);
             }
         }
     }
@@ -124,6 +113,9 @@ struct Window {
     void move(int differenceX, int differenceY) {
         windowX += differenceX;
         windowY += differenceY;
+        if (windowY < 0) {
+            windowY = 0;
+        }
     }
 
     /// Resize window, by default from the right.
@@ -153,25 +145,25 @@ struct Window {
     }
 
     /// Check if an absolute pair of coordinates is in the titlebar.
-    bool isTitleBar(size_t x, size_t y) {
+    bool isTitleBar(long x, long y) {
         import display.defaultfont: fontWidth, fontHeight;
         return x >= windowX && x <= windowX + canvasWidth && y >= windowY && y <= windowY + fontHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the window, includes titlebar.
-    bool isInWindow(size_t x, size_t y) {
+    bool isInWindow(long x, long y) {
         import display.defaultfont: fontWidth, fontHeight;
         return x >= windowX && x <= windowX + canvasWidth && y >= windowY && y <= windowY + fontHeight + canvasHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the left borders.
-    bool isInLeftBorders(size_t x, size_t y) {
+    bool isInLeftBorders(long x, long y) {
         import display.defaultfont: fontWidth, fontHeight;
         return x == windowX && y >= windowY && y <= canvasHeight + windowY + fontHeight;
     }
 
     /// Check if an absolute pair of coordinates is in the left borders.
-    bool isInRightBorders(size_t x, size_t y) {
+    bool isInRightBorders(long x, long y) {
         import display.defaultfont: fontWidth, fontHeight;
         return x == windowX + canvasWidth && y >= windowY && y <= canvasHeight + windowY + fontHeight;
     }
