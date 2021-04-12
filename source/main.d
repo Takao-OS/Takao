@@ -12,7 +12,7 @@ import storage.driver:  initStorageSubsystem;
 import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
-debug import lib.debugtools: log;
+debug import lib.debugtools: log, error;
 
 private immutable boldFontPath    = ":bold.psf";
 private immutable cursiveFontPath = ":cursive.psf";
@@ -58,9 +58,10 @@ void kernelMain(const ref KernelProtocol proto) {
     if (init != null) {
         const fd = open(init, FileMode.Read);
         if (fd == -1) {
-            panic("Could not open init");
+            debug error("Could not open init");
+        } else {
+            close(fd);
         }
-        close(fd);
     }
 
     debug log("Doing last minute preparations");

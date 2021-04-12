@@ -8,9 +8,9 @@ module lib.bit;
 ///     index  = 0-based index of the bit to test.
 /// Returns: true if set, false if unset.
 bool bittest(size_t* bitmap, size_t index) {
-    static immutable bitsOfTtpe = size_t.sizeof * 8;
-    const size_t testIndex = index % bitsOfTtpe;
-    const size_t toTest    = bitmap[index / bitsOfTtpe];
+    immutable bitsOfTtpe = size_t.sizeof * 8;
+    const testIndex = index % bitsOfTtpe;
+    const toTest    = bitmap[index / bitsOfTtpe];
     return (toTest >> testIndex) & 1U;
 }
 
@@ -28,8 +28,8 @@ bool bittest(uint var, size_t index) {
 ///     bitmap = Bitmap to set.
 ///     index  = 0-based index of the bit to set.
 void bitset(size_t* bitmap, size_t index) {
-    static immutable bitsOfTtpe = size_t.sizeof * 8;
-    const size_t testIndex = index % bitsOfTtpe;
+    immutable bitsOfTtpe = size_t.sizeof * 8;
+    const testIndex = index % bitsOfTtpe;
     bitmap[index / bitsOfTtpe] |= 1UL << testIndex;
 }
 
@@ -37,9 +37,8 @@ void bitset(size_t* bitmap, size_t index) {
 /// Params:
 ///     bitmap = Bitmap to set.
 ///     index  = 0-based index of the bit to set.
-extern (C) void bitreset(size_t* bitmap, size_t index) {
-    // Use this once the allocations are reworked because bug.
-    static immutable bitsOfTtpe = size_t.sizeof * 8;
-    const size_t testIndex = index % bitsOfTtpe;
+void bitreset(size_t* bitmap, size_t index) {
+    immutable bitsOfTtpe = size_t.sizeof * 8;
+    const testIndex = index % bitsOfTtpe;
     bitmap[index / bitsOfTtpe] &= ~(1UL << testIndex);
 }

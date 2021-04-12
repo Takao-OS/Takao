@@ -141,9 +141,6 @@ private immutable maxBus      = 256;
 
 import lib.list;
 
-private __gshared bool isScanned;
-private __gshared List!(PCIDevice) pciList;
-
 private void checkFunction(List!(PCIDevice)* scan, ubyte bus, ubyte slot,
                            ubyte func, long parent) {
     auto device = PCIDevice(bus, slot, func, parent);
@@ -169,7 +166,7 @@ private void checkBus(List!(PCIDevice)* scan, ubyte bus, long parent) {
     }
 }
 
-private List!(PCIDevice) scanPCI() {
+List!(PCIDevice) scanPCI() {
     auto scan    = List!(PCIDevice)(5);
     auto rootBus = PCIDevice(0, 0, 0, 0);
     uint configC = rootBus.readDword(0xc);
@@ -189,20 +186,4 @@ private List!(PCIDevice) scanPCI() {
     }
 
     return scan;
-}
-
-PCIDevice* findPCIDevice(ubyte devClass, ubyte subclass , ubyte progIf) {
-    if (!isScanned) {
-        pciList = scanPCI();
-        isScanned = true;
-    }
-
-    foreach (i; 0..pciList.length) {
-        if (pciList[i].deviceClass == devClass && pciList[i].subclass == subclass
-            && pciList[i].progIf == progIf) {
-            return &pciList[i];
-        }
-    }
-
-    return null;
 }

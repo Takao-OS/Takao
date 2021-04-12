@@ -89,7 +89,7 @@ struct KernelDevice {
     debug void debugPrint() const {
         log("'", driver, "' using addresses:");
         foreach (i; mmioRegs) {
-            log(i);
+            log(cast(void*)i);
         }
     }
 }

@@ -14,6 +14,7 @@ import arch.x86_64_stivale2.ps2mouse:    initPS2Mouse;
 import arch.x86_64_stivale2.ps2keyboard: initPS2Keyboard;
 import arch.x86_64_stivale2.smp:         initSMP;
 import arch.x86_64_stivale2.cpu:         initCPULocals, initCPU;
+import arch.x86_64_stivale2.devices:     scanDevices;
 import lib.string:                       fromCString;
 import lib.panic:                        panic;
 import memory.physical:                  PhysicalAllocator;
@@ -69,14 +70,13 @@ extern (C) void start(Stivale2* proto) {
 
     debug log("Jumping to freestanding kernel");
     KernelProtocol kproto;
-    kproto.cmdline             = fromCString(cast(char*)cmdline.cmdline);
-    kproto.fb.address          = fb.address;
-    kproto.fb.width            = fb.width;
-    kproto.fb.height           = fb.height;
-    kproto.fb.pitch            = fb.pitch;
-    kproto.fb.bpp              = fb.bpp;
-    kproto.mmap = protomemmap;
-    kproto.devices.deviceCount = 0;
-    kproto.devices.devices     = null;
+    kproto.cmdline    = fromCString(cast(char*)cmdline.cmdline);
+    kproto.fb.address = fb.address;
+    kproto.fb.width   = fb.width;
+    kproto.fb.height  = fb.height;
+    kproto.fb.pitch   = fb.pitch;
+    kproto.fb.bpp     = fb.bpp;
+    kproto.mmap       = protomemmap;
+    kproto.devices    = scanDevices();
     kernelMain(kproto);
 }
