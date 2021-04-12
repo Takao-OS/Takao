@@ -13,35 +13,27 @@ import lib.lock:            Lock;
 import lib.list:            List;
 import main:                mainMappings;
 
-private struct WindowPackage {
-    bool   isPresent;
-    int    wh;
-    Window inner;
-}
-
 private immutable loadingBackground = 0x000000;
 private immutable loadingFontColour = 0xffffff;
 private immutable panicBackground   = 0xff0000;
 private immutable panicFontColour   = 0xffffff;
 private immutable wmBackground      = 0xaaaaaa;
 
-private __gshared int windowMaxWH;
-
 /// Window manager.
 struct WM {
-    private bool               isInit;
-    private Lock               lock;
-    private Framebuffer        backBuffer;
-    private Framebuffer        frontBuffer;
-    private Framebuffer        realBuffer;
-    private Cursor             cursor;
-    private List!WindowPackage windows;
-    private bool               hasBold;
-    private PSFont             boldFont;
-    private bool               hasCursive;
-    private PSFont             cursiveFont;
-    private bool               hasSans;
-    private PSFont             sansFont;
+    private bool        isInit;
+    private Lock        lock;
+    private Framebuffer backBuffer;
+    private Framebuffer frontBuffer;
+    private Framebuffer realBuffer;
+    private Cursor      cursor;
+    private List!Window windows;
+    private bool        hasBold;
+    private PSFont      boldFont;
+    private bool        hasCursive;
+    private PSFont      cursiveFont;
+    private bool        hasSans;
+    private PSFont      sansFont;
 
     /// Create a WM for a physical framebuffer.
     this(const ref KernelFramebuffer fb) {
@@ -57,7 +49,7 @@ struct WM {
         }
 
         cursor     = Cursor(fb.width / 2, fb.height / 2);
-        windows    = List!WindowPackage(5);
+        windows    = List!Window(5);
         hasBold    = false;
         hasCursive = false;
         hasSans    = false;
@@ -114,57 +106,32 @@ struct WM {
     /// Params:
     ///     name = Name of the window, null if none.
     /// Returns: Window handle number if successful, -1 in failure.
-    int createWindow(string name) {
+    long createWindow(string name) {
         lock.acquire();
-        auto wh  = windowMaxWH++;
-        auto win = Window(name, 300, 300);
-        foreach (i; 0..windows.length) {
-            if (!windows[i].isPresent) {
-                windows[i].isPresent = true;
-                windows[i].wh        = wh;
-                windows[i].inner     = win;
-                goto done;
-            }
-        }
-        windows.push(WindowPackage(true, wh, win));
-    done:
+        const ret = windows.push(Window(name, 300, 300));
         lock.release();
-        return wh;
+        return ret;
     }
 
     /// Fetch window for modifying.
     /// Params:
     ///     window = Window handle.
     /// Returns: Window pointer or null if not found.
-    Window* fetchWindow(int window) {
+    Window* fetchWindow(long window) {
         assert(window != -1);
-
-        Window* ret = null;
-        foreach (i; 0..windows.length) {
-            if (windows[i].isPresent && windows[i].wh == window) {
-                ret = &windows[i].inner;
-                goto end;
-            }
+        if (window >= windows.length || !windows.isPresent(window)) {
+            return null;
         }
-
-    end:
-        lock.release();
-        return ret;
+        return &windows[window];
     }
 
     /// Remove a window.
     /// Params:
     ///     window = Window to remove, never -1.
-    void removeWindow(int window) {
-        assert(window != -1);
+    void removeWindow(long window) {
+        assert(window != -1 && window < windows.length);
         lock.acquire();
-        foreach (i; 0..windows.length) {
-            if (windows[i].isPresent && windows[i].wh == window) {
-                windows[i].isPresent = false;
-                goto ret;
-            }
-        }
-    ret:
+        windows.remove(window);
         lock.release();
     }
 
@@ -177,8 +144,8 @@ struct WM {
 
         backBuffer.clear(wmBackground);
         foreach_reverse (i; 0..windows.length) {
-            if (windows[i].isPresent) {
-                windows[i].inner.draw(bold, curs, sans, backBuffer);
+            if (windows.isPresent(i)) {
+                windows[i].draw(bold, curs, sans, backBuffer);
             }
         }
         cursor.draw(backBuffer);
@@ -206,8 +173,8 @@ struct WM {
                     break;
                 case 'd':
                     foreach (i; 0..windows.length) {
-                        if (windows[i].isPresent) {
-                            windows[i].isPresent = false;
+                        if (windows.isPresent(i)) {
+                            windows.remove(i);
                             break;
                         }
                     }
@@ -226,13 +193,13 @@ struct WM {
 
         if (isLeftClick) {
             foreach (i; 0..windows.length) {
-                auto win = &windows[i];
-                if (win.inner.isInWindow(cursorX, cursorY)) {
-                    auto temp  = windows[0]; // @suppress(dscanner.suspicious.unmodified)
-                    windows[0] = *win;
-                    windows[i] = temp;
-                    windows[0].inner.setFocused(true);
-                    auto w = &windows[0].inner; 
+                if (!windows.isPresent(i)) {
+                    continue;
+                }
+                if (windows[i].isInWindow(cursorX, cursorY)) {
+                    windows.swapIndexes(i, 0);
+                    windows[0].setFocused(true);
+                    auto w = &windows[0]; 
                     if (w.isTitleBar(cursorX, cursorY)) {
                         if (cursorX == 0 || cursorY == 0 ||
                             cursorX >= realBuffer.width - 1 || cursorY >= realBuffer.height - 1) {
@@ -246,7 +213,7 @@ struct WM {
                     }
                     break;
                 } else {
-                    win.inner.setFocused(false);
+                    windows[i].setFocused(false);
                 }
             }
         }

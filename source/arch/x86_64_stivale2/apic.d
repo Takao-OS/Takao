@@ -34,7 +34,7 @@ void lapicSetNMI(ubyte vec, ushort flags, ubyte lint) {
 }
 
 void lapicInstallNMI(ubyte vec, int nmi) {
-    auto nmis = madtNMIs;
+    alias nmis = madtNMIs;
     lapicSetNMI(vec, nmis[nmi].flags, nmis[nmi].lint);
 }
 
@@ -52,22 +52,22 @@ void lapicSendIPI(int cpu, ubyte vector) {
 }
 
 uint ioAPICRead(size_t ioAPIC, uint reg) {
-    auto ioAPICs = madtIOAPICs;
+    alias ioAPICs = madtIOAPICs;
     uint* base = cast(uint*)(cast(size_t)ioAPICs[ioAPIC].address);
     volatileStore(base, reg);
     return volatileLoad(base + 4);
 }
 
 void ioAPICWrite(size_t ioAPIC, uint reg, uint data) {
-    auto ioAPICs = madtIOAPICs;
-    auto base = cast(uint*)(cast(size_t)ioAPICs[ioAPIC].address);
+    alias ioAPICs = madtIOAPICs;
+    auto  base    = cast(uint*)(cast(size_t)ioAPICs[ioAPIC].address);
     volatileStore(base,     reg);
     volatileStore(base + 4, data);
 }
 
 
 void ioAPICSetUpLegacyIRQ(int cpu, ubyte irq, bool status) {
-    auto isos = madtISOs;
+    alias isos = madtISOs;
 
     foreach (size_t i; 0..isos.length) {
         if (isos[i].irqSource == irq) {
@@ -86,7 +86,7 @@ uint ioAPICGetMaxRedirect(size_t ioAPIC) {
 }
 
 size_t ioAPICFromGSI(uint gsi) {
-    auto ioAPICs = madtIOAPICs;
+    alias ioAPICs = madtIOAPICs;
 
     foreach (size_t i; 0..ioAPICs.length) {
         if (ioAPICs[i].gsib <= gsi && ioAPICs[i].gsib + ioAPICGetMaxRedirect(i) > gsi)
@@ -97,8 +97,8 @@ size_t ioAPICFromGSI(uint gsi) {
 }
 
 void ioAPICConnectGSIToVec(int cpu, ubyte vec, uint gsi, ushort flags, bool status) {
-    auto ioAPICs = madtIOAPICs;
-    auto ioAPIC  = ioAPICFromGSI(gsi);
+    alias ioAPICs = madtIOAPICs;
+    auto  ioAPIC  = ioAPICFromGSI(gsi);
 
     long redirect = vec;
 

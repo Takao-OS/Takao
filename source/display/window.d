@@ -23,7 +23,6 @@ struct TextWidget {
 
 /// Struct that represents a window.
 struct Window {
-    private bool            isInitialized;
     private bool            isFocused;
     private string          titleString;
     private long            windowX;
@@ -34,7 +33,6 @@ struct Window {
 
     /// Creates the object.
     this(string title, size_t windowWidth, size_t windowHeight) {
-        isInitialized = true;
         titleString   = title;
         windowX       = 30;
         windowY       = 30;
