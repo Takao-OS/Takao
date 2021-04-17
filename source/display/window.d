@@ -56,8 +56,6 @@ struct Window {
         import display.defaultfont: fontWidth, fontHeight;
 
         // Title and border work.
-        import lib.debugtools: log;
-
         auto colour = isFocused ? focusedTitleBorder : titleBorder;
         foreach (i; 0..canvasWidth) {
             foreach (j; 0..fontHeight) {

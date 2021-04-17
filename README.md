@@ -21,9 +21,9 @@ To build the kernel, it is enough with a simple `make`, add flags as needed.
 To test, run `make test`.
 
 An example for a release build some appropiate flags would be
-`make DFLAGS='-O -release -inline -flto=full'`, while the default flags are suited for
-debug/development builds, architecture target can also be chosen with the
-`ARCH` variable.
+`make DFLAGS='-O -release -inline -flto=full' LDFLAGS='-O3'`, while the default
+flags are suited for debug/development builds, architecture target can also be
+chosen with the Makefile's `ARCH` variable.
 
 ## Projects and documents used as reference and help
 

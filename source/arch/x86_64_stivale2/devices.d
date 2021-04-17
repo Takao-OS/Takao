@@ -28,6 +28,11 @@ KernelDeviceMap scanDevices() {
             privateDevices[deviceCount].driver   = "nvme-controller";
             privateDevices[deviceCount].mmioRegs = [bar0.base, 0, 0, 0];
             deviceCount++;
+        } else if (dev.deviceClass == 0x01 && dev.subclass == 0x01) {
+            dev.enableBusMastering();
+            privateDevices[deviceCount].driver   = "ata-controller";
+            privateDevices[deviceCount].mmioRegs = [0, 0, 0, 0];
+            deviceCount++;
         } else if (dev.deviceClass == 0x01 && dev.subclass == 0x06 && dev.progIf == 0x01) {
             const bar0 = dev.getBar(5);
             dev.enableBusMastering();
