@@ -8,7 +8,7 @@ import lib.panic:       panic;
 import lib.string:      buildStringInPlace, fromCString;
 import memory.physical: PhysicalAllocator;
 import memory.virtual:  VirtualSpace;
-import storage.driver:  initStorageSubsystem;
+import storage.driver:  StorageDriver;
 import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
@@ -21,6 +21,7 @@ private immutable sansFontPath    = ":sans.psf";
 __gshared WM                mainWM;        /// Main window manager.
 __gshared PhysicalAllocator mainAllocator; /// Main allocator.
 __gshared VirtualSpace      mainMappings;  /// Main virtual mappings.
+__gshared StorageDriver     mainStorage;   /// Main storage driver.
 
 /// Main function of the kernel.
 /// The state when the function is called must be:
@@ -44,7 +45,7 @@ void kernelMain(const ref KernelProtocol proto) {
     mainWM.loadingScreen();
 
     debug log("Starting storage subsystem");
-    initStorageSubsystem();
+    mainStorage = StorageDriver(proto.devices);
 
     debug log("Fetch commandline options");
     string init;
