@@ -2,7 +2,7 @@
 module storage.driver;
 
 import lib.list:       List;
-import kernelprotocol: KernelDeviceMap;
+import kernelprotocol: KernelDevice;
 
 /// The storage subsystem is accessed requesting access and opening paths.
 /// The system storage architecture is based on a list of devices, like windows.
@@ -43,12 +43,13 @@ private struct BlockCache {
 
 /// Main storage driver.
 struct StorageDriver {
-    private List!DriveMount    driveMounts;  // Mounted and identified drives.
-    private List!PartitionInfo partitions;   // Partitions identified and in use.
-    private List!BlockCache    cachedBlocks; // Cached blocks from drives.
+    static:
+    private __gshared List!DriveMount    driveMounts;  // Mounted and identified drives.
+    private __gshared List!PartitionInfo partitions;   // Partitions identified and in use.
+    private __gshared List!BlockCache    cachedBlocks; // Cached blocks from drives.
 
     /// Initialize the driver with devices.
-    this(const ref KernelDeviceMap devs) {
+    void initialize(const KernelDevice[] devs) {
         import storage.ata: ataProbeAndAdd  = probeAndAdd, ATADrive;
         import lib.string:  buildString;
         debug import lib.debugtools: log;

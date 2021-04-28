@@ -4,9 +4,8 @@ module memory.virtual;
 import lib.lock:       Lock;
 import lib.panic:      panic;
 import lib.alignment:  alignUp, alignDown;
-import kernelprotocol: KernelMemoryMap, KernelMemoryEntry;
+import kernelprotocol: KernelMemoryEntry;
 import archinterface:  ArchMMU, ArchMMUPage, ArchMappingType;
-import main:           mainAllocator;
 
 alias pageSize = ArchMMUPage;     /// Size of a virtual page.
 alias MapType  = ArchMappingType; /// Types of maping.
@@ -17,7 +16,7 @@ struct VirtualSpace {
     private ArchMMU innerMMU;
 
     /// Create a virtual address space from a physical one.
-    this(const ref KernelMemoryMap mmap) {
+    this(const KernelMemoryEntry[] memmap) {
         bool success; // @suppress(dscanner.suspicious.unmodified)
         innerMMU = ArchMMU(success);
         if (!success) {
@@ -32,8 +31,7 @@ struct VirtualSpace {
         }
 
         // Identity map the whole memory map.
-        auto entries = mmap.entries[0..mmap.entryCount];
-        foreach (ref entry; entries) {
+        foreach (ref entry; memmap) {
             const alignedBase = alignDown(entry.base, pageSize);
             const newSize     = entry.size + (entry.base % pageSize);
             const alignedSize = alignUp(newSize, pageSize);

@@ -5,10 +5,10 @@ debug import lib.debugtools: log;
 
 /// Struct containing the protocol used to call the kernel.
 struct KernelProtocol {
-    string            cmdline; /// Commandline used to call the kernel.
-    KernelFramebuffer fb;      /// Framebuffer, for use if there is no GPU.
-    KernelMemoryMap   mmap;    /// Memory map passed to the kernel.
-    KernelDeviceMap   devices; /// Devices to be used by the kernel.
+    string              cmdline; /// Commandline used to call the kernel.
+    KernelFramebuffer   fb;      /// Framebuffer, for use if there is no GPU.
+    KernelMemoryEntry[] memmap;  /// Memory map passed to the kernel.
+    KernelDevice[]      devmap;  /// Devices to be used by the kernel.
 
     /// Print the struct contents to debug output.
     debug void debugPrint() const {
@@ -16,9 +16,13 @@ struct KernelProtocol {
         log("Framebuffer:");
         fb.debugPrint();
         log("Memory map:");
-        mmap.debugPrint();
+        foreach (entry; memmap) {
+            entry.debugPrint();
+        }
         log("Device map:");
-        devices.debugPrint();
+        foreach (entry; devmap) {
+            entry.debugPrint();
+        }
     }
 }
 
@@ -40,21 +44,6 @@ struct KernelFramebuffer {
     }
 }
 
-/// Struct containing the kernel memory map.
-/// All entries are free, and do not require being contiguous or aligned to
-/// any boundary.
-struct KernelMemoryMap {
-    size_t             entryCount; /// Count of entries.
-    KernelMemoryEntry* entries;    /// Actual entries.
-
-    /// Print the struct contents to debug output.
-    debug void debugPrint() const {
-        foreach (i; 0..entryCount) {
-            entries[i].debugPrint();
-        }
-    }
-}
-
 /// Memory entry.
 struct KernelMemoryEntry {
     size_t base;   /// Base of the memory range.
@@ -64,19 +53,6 @@ struct KernelMemoryEntry {
     /// Print the struct contents to debug output.
     debug void debugPrint() const {
         log("[", cast(void*)base, " + ", cast(void*)size, "] - ", cast(size_t)isFree);
-    }
-}
-
-/// Struct containing uninitialized device information.
-struct KernelDeviceMap {
-    size_t        deviceCount; /// Device count.
-    KernelDevice* devices;     /// Actual devices.
-
-    /// Print the struct contents to debug output.
-    debug void debugPrint() const {
-        foreach (i; 0..deviceCount) {
-            devices[i].debugPrint();
-        }
     }
 }
 

@@ -2,7 +2,6 @@
 module storage.file;
 
 import storage.driver: PartitionInfo, FSType, StorageDriver;
-import main:           mainStorage;
 import memory.alloc:   allocate, free, resizeAllocation;
 debug import lib.debugtools: log, warn;
 
@@ -57,7 +56,7 @@ FileDescriptor open(string path, FileMode mode) {
     auto drivePath      = path[0..driveEnd];
     auto partitionIndex = intFromString(path[(driveEnd + 1)..partitionEnd]);
     auto filePath       = path[(partitionEnd + 1)..path.length];
-    auto partition      = mainStorage.findPartition(drivePath, partitionIndex);
+    auto partition      = StorageDriver.findPartition(drivePath, partitionIndex);
     if (partition == null) {
         debug warn("file: Requested partition does not really exist");
         return -1;

@@ -2,8 +2,8 @@
 /// nasty happens.
 module lib.panic;
 
-import lib.lock: Lock;
-import main:     mainWM;
+import lib.lock:   Lock;
+import display.wm: WM;
 
 private __gshared Lock panicLock;
 
@@ -37,6 +37,6 @@ void panic(T...)(T args) {
     // Display panic with all means we have and die.
     disableInterrupts();
     debug error(str);
-    mainWM.panicScreen(str);
+    WM.panicScreen(str);
     killCore();
 }

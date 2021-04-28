@@ -2,14 +2,14 @@
 module arch.x86_64_stivale2.devices;
 
 import arch.x86_64_stivale2.pci: scanPCI, PCIDevice;
-import kernelprotocol:           KernelDeviceMap, KernelDevice;
+import kernelprotocol:           KernelDevice;
 
 // TODO: This being fixed could be an issue.
 private shared KernelDevice[20] privateDevices;
 
 /// Scan the devices in the system and return them in the kernel protocol
 /// form.
-KernelDeviceMap scanDevices() {
+KernelDevice[] scanDevices() {
     // Add the strictly necessary devices.
     size_t deviceCount = 1;
     privateDevices[0] = KernelDevice("x86-ps2-controller", [0, 0, 0, 0]);
@@ -43,5 +43,5 @@ KernelDeviceMap scanDevices() {
     }
 
     // Return our findings.
-    return KernelDeviceMap(deviceCount, cast(KernelDevice*)privateDevices.ptr);
+    return (cast(KernelDevice*)privateDevices.ptr)[0..deviceCount];
 }

@@ -18,34 +18,31 @@ private immutable boldFontPath    = ":bold.psf";
 private immutable cursiveFontPath = ":cursive.psf";
 private immutable sansFontPath    = ":sans.psf";
 
-__gshared WM                mainWM;        /// Main window manager.
-__gshared PhysicalAllocator mainAllocator; /// Main allocator.
-__gshared VirtualSpace      mainMappings;  /// Main virtual mappings.
-__gshared StorageDriver     mainStorage;   /// Main storage driver.
+__gshared VirtualSpace mainMappings; /// Main virtual mappings.
 
 /// Main function of the kernel.
 /// The state when the function is called must be:
 ///     - All cores but the one executing this function must be halting.
 ///     - Interrupts can be on or off.
 ///     - Flat addressing, no paging or anything.
-///     - The memory allocator must be already initialized, this is done for
-///       ports that might require memory management for hardware initialization
-///       purposes.
+///     - The physical memory allocator must be already initialized, this is done
+///       for ports that might require memory management for hardware
+///       initialization purposes.
 void kernelMain(const ref KernelProtocol proto) {
     debug log("Hi from the freestanding kernel!");
     debug proto.debugPrint();
     disableInterrupts();
 
     debug log("Creating and activating main mappings");
-    mainMappings = VirtualSpace(proto.mmap);
+    mainMappings = VirtualSpace(proto.memmap);
     mainMappings.setActive();
 
     debug log("Starting WM");
-    mainWM = WM(proto.fb);
-    mainWM.loadingScreen();
+    WM.initialize(proto.fb);
+    WM.loadingScreen();
 
     debug log("Starting storage subsystem");
-    mainStorage = StorageDriver(proto.devices);
+    StorageDriver.initialize(proto.devmap);
 
     debug log("Fetch commandline options");
     string init;
@@ -71,18 +68,18 @@ void kernelMain(const ref KernelProtocol proto) {
         char[256] path;
         size_t    len;
         len = buildStringInPlace(path.ptr, path.length, root, boldFontPath); 
-        mainWM.loadBoldFont(fromCString(path.ptr, len));
+        WM.loadBoldFont(fromCString(path.ptr, len));
         len = buildStringInPlace(path.ptr, path.length, root, cursiveFontPath);
-        mainWM.loadCursiveFont(fromCString(path.ptr, len));
+        WM.loadCursiveFont(fromCString(path.ptr, len));
         len = buildStringInPlace(path.ptr, path.length, root, sansFontPath);
-        mainWM.loadSansFont(fromCString(path.ptr, len));
+        WM.loadSansFont(fromCString(path.ptr, len));
     }
 
-    auto wh = mainWM.createWindow("Hello!");
+    auto wh = WM.createWindow("Hello!");
     if (wh == -1) {
         panic("Could not create window");
     }
-    auto win = mainWM.fetchWindow(wh);
+    auto win = WM.fetchWindow(wh);
     if (win == null) {
         panic("Could not fetch welcome window");
     }
@@ -96,7 +93,7 @@ void kernelMain(const ref KernelProtocol proto) {
 
     debug log("Starting refresh cycle");
     for (;;) {
-        mainWM.refresh();
+        WM.refresh();
     }
 
     panic("End of kernel");

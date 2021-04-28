@@ -21,22 +21,23 @@ private immutable wmBackground      = 0xaaaaaa;
 
 /// Window manager.
 struct WM {
-    private bool        isInit;
-    private Lock        lock;
-    private Framebuffer backBuffer;
-    private Framebuffer frontBuffer;
-    private Framebuffer realBuffer;
-    private Cursor      cursor;
-    private List!Window windows;
-    private bool        hasBold;
-    private PSFont      boldFont;
-    private bool        hasCursive;
-    private PSFont      cursiveFont;
-    private bool        hasSans;
-    private PSFont      sansFont;
+    static:
+    private __gshared bool        isInit;
+    private __gshared Lock        lock;
+    private __gshared Framebuffer backBuffer;
+    private __gshared Framebuffer frontBuffer;
+    private __gshared Framebuffer realBuffer;
+    private __gshared Cursor      cursor;
+    private __gshared List!Window windows;
+    private __gshared bool        hasBold;
+    private __gshared PSFont      boldFont;
+    private __gshared bool        hasCursive;
+    private __gshared PSFont      cursiveFont;
+    private __gshared bool        hasSans;
+    private __gshared PSFont      sansFont;
 
     /// Create a WM for a physical framebuffer.
-    this(const ref KernelFramebuffer fb) {
+    void initialize(const ref KernelFramebuffer fb) {
         backBuffer  = Framebuffer(fb.width, fb.height, fb.pitch);
         frontBuffer = Framebuffer(fb.width, fb.height, fb.pitch);
         realBuffer  = Framebuffer(fb);

@@ -19,8 +19,8 @@ import lib.string:                       fromCString;
 import lib.panic:                        panic;
 import memory.physical:                  PhysicalAllocator;
 import archinterface:                    enableInterrupts, disableInterrupts;
-import kernelprotocol:                   KernelProtocol, KernelDevice;
-import main:                             mainAllocator, kernelMain;
+import kernelprotocol:                   KernelProtocol, KernelFramebuffer;
+import main:                             kernelMain;
 
 debug import lib.debugtools: log;
 
@@ -46,7 +46,7 @@ extern (C) void start(Stivale2* proto) {
 
     debug log("Initializing freestanding memory management");
     auto protomemmap = translateStivaleMemmap(memmap);
-    mainAllocator    = PhysicalAllocator(protomemmap);
+    PhysicalAllocator.initialize(protomemmap);
 
     debug log("Parsing basic ACPI information");
     initACPI(rsdp.rsdp);
@@ -70,13 +70,9 @@ extern (C) void start(Stivale2* proto) {
 
     debug log("Jumping to freestanding kernel");
     KernelProtocol kproto;
-    kproto.cmdline    = fromCString(cast(char*)cmdline.cmdline);
-    kproto.fb.address = fb.address;
-    kproto.fb.width   = fb.width;
-    kproto.fb.height  = fb.height;
-    kproto.fb.pitch   = fb.pitch;
-    kproto.fb.bpp     = fb.bpp;
-    kproto.mmap       = protomemmap;
-    kproto.devices    = scanDevices();
+    kproto.cmdline = fromCString(cast(char*)cmdline.cmdline);
+    kproto.fb      = KernelFramebuffer(fb.address, fb.width, fb.height, fb.pitch, fb.bpp);
+    kproto.memmap  = protomemmap;
+    kproto.devmap  = scanDevices();
     kernelMain(kproto);
 }

@@ -2,7 +2,6 @@
 module storage.echfs;
 
 import storage.driver: PartitionInfo, FSType, StorageDriver;
-import main:           mainStorage;
 import memory.alloc:   allocate, free;
 import lib.string:     fromCString;
 import lib.math:       divRoundUp;
@@ -57,7 +56,7 @@ ECHFSInfo* probeECHFS(PartitionInfo* part) {
 
     // Read block 0, which is the identity table.
     ECHFSIdentityTable table;
-    if (!mainStorage.readDrive(part.containingDrive, &table, part.driveOffset, table.sizeof)) {
+    if (!StorageDriver.readDrive(part.containingDrive, &table, part.driveOffset, table.sizeof)) {
         debug warn("echfs: Could not read drive in probing.");
         return null;
     }
@@ -107,7 +106,7 @@ bool echfsReadFile(PartitionInfo* part, string path, out ubyte* file, out size_t
     fileBlockList[0] = dirEntry.payload;
     foreach (i; 1..fileBlockCount) {
         const auto index = fsInfo.allocTableOffset + fileBlockList[i - 1] * ulong.sizeof;
-        if (!mainStorage.readDrive(drive, &fileBlockList[i], index, ulong.sizeof)) {
+        if (!StorageDriver.readDrive(drive, &fileBlockList[i], index, ulong.sizeof)) {
             debug warn("echfs: Could not read allocation list for ", path);
             free(fileBlockList);
             return false;
@@ -121,10 +120,10 @@ bool echfsReadFile(PartitionInfo* part, string path, out ubyte* file, out size_t
     foreach (i; 0..fileBlockCount) {
         auto offset = (fileBlockList[i] * blkSize) + part.driveOffset;
 
-        if (!mainStorage.readDrive(drive, blk, offset, blkSize)) {
+        if (!StorageDriver.readDrive(drive, blk, offset, blkSize)) {
             debug warn("echfs: Could not read final file at offset ", offset);
             // FIXME: If I dont put this 4 prints, in this order, for some reason, this
-            // call to mainStorage.readDrive will fail.
+            // call to StorageDriver.readDrive will fail.
             // please someone from ldc explain this.
             debug log("A:",drive);
             debug log("A:",blk);
@@ -188,7 +187,7 @@ next:
 
     ECHFSDirEntry dirEntry;
     for (ulong i = 0; i < dirLength; i += ECHFSDirEntry.sizeof) {
-        if (!mainStorage.readDrive(drive, &dirEntry, i + fsInfo.mainDirOffset, ECHFSDirEntry.sizeof)) {
+        if (!StorageDriver.readDrive(drive, &dirEntry, i + fsInfo.mainDirOffset, ECHFSDirEntry.sizeof)) {
             debug warn("echfs: Failed to read entry");
             return false;
         }

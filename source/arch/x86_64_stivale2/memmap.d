@@ -2,7 +2,7 @@
 module arch.x86_64_stivale2.memmap;
 
 import arch.x86_64_stivale2.protocol: Stivale2Memmap, Stivale2MemoryType;
-import kernelprotocol: KernelMemoryMap, KernelMemoryEntry;
+import kernelprotocol:                KernelMemoryEntry;
 
 // TODO: This being fixed could be an issue.
 private shared KernelMemoryEntry[20] privateMemmap;
@@ -11,7 +11,7 @@ private shared KernelMemoryEntry[20] privateMemmap;
 /// Params:
 ///     memmap = Pointer to memmap, never null.
 /// Returns: The translated memmap.
-KernelMemoryMap translateStivaleMemmap(Stivale2Memmap* memmap) {
+KernelMemoryEntry[] translateStivaleMemmap(Stivale2Memmap* memmap) {
     assert(memmap != null);
 
     size_t memmapCount;
@@ -26,8 +26,5 @@ KernelMemoryMap translateStivaleMemmap(Stivale2Memmap* memmap) {
         memmapCount++;
     }
 
-    KernelMemoryMap ret;
-    ret.entryCount = memmapCount;
-    ret.entries    = cast(KernelMemoryEntry*)(privateMemmap.ptr);
-    return ret;
+    return (cast(KernelMemoryEntry*)privateMemmap.ptr)[0..memmapCount];
 }

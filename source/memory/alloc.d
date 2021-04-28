@@ -1,9 +1,7 @@
 module memory.alloc;
 
-import main: mainAllocator;
-import memory.physical: blockSize;
-import lib.math;
-import lib.glue;
+import memory.physical: blockSize, PhysicalAllocator;
+import lib.math:        divRoundUp;
 
 private struct ArrayAllocMetadata {
     size_t pages;
@@ -17,7 +15,7 @@ size_t getAllocationSize(void* ptr) {
 
 T* allocate(T = ubyte)(size_t count = 1) {
     auto pageCount = divRoundUp(T.sizeof * count, blockSize);
-    auto ptr = mainAllocator.allocAndZero(pageCount + 1);
+    auto ptr = PhysicalAllocator.allocAndZero(pageCount + 1);
     assert(ptr != null);
 
     auto meta = cast(ArrayAllocMetadata*)ptr;
@@ -53,7 +51,7 @@ int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
     } else if (meta.pages > pageCount) {
         auto ptr = cast(void*)*oldPtr;
         ptr += (pageCount * blockSize);
-        mainAllocator.free(ptr, meta.pages - pageCount);
+        PhysicalAllocator.free(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
         meta.count = newCount;
         return 0;
@@ -72,5 +70,5 @@ int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
 void free(void *ptr) {
     auto meta = cast(ArrayAllocMetadata*)(ptr - blockSize);
     ptr -= blockSize;
-    mainAllocator.free(ptr, meta.pages + 1);
+    PhysicalAllocator.free(ptr, meta.pages + 1);
 }

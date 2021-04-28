@@ -1,7 +1,7 @@
 /// Utilities for physical memory tracking and allocation.
 module memory.physical;
 
-import kernelprotocol: KernelMemoryMap;
+import kernelprotocol: KernelMemoryEntry;
 import lib.lock:       Lock;
 import lib.alignment:  alignUp, alignDown;
 import lib.math:       divRoundUp;
@@ -13,17 +13,18 @@ immutable blockSize = 0x1000; /// Size of the minimum block allocated.
 
 /// Physical allocator.
 struct PhysicalAllocator {
-    private size_t  lowestPage;
-    private size_t  highestPage;
-    private size_t* bitmap;
-    private Lock    lock;
-    private size_t  lastUsedIndex;
+    static:
+    private __gshared size_t  lowestPage;
+    private __gshared size_t  highestPage;
+    private __gshared size_t* bitmap;
+    private __gshared Lock    lock;
+    private __gshared size_t  lastUsedIndex;
 
     /// Construct the physical memory manager.
-    this(const ref KernelMemoryMap memmap) {
+    void initialize(const KernelMemoryEntry[] memmap) {
         // First, calculate how big the bitmap needs to be.
-        for (size_t i = 0; i < memmap.entryCount; i++) {
-            const top = memmap.entries[i].base + memmap.entries[i].size;
+        foreach (ref entry; memmap) {
+            const top = entry.base + entry.size;
             if (top > highestPage) {
                 highestPage = top;
             }
@@ -34,15 +35,15 @@ struct PhysicalAllocator {
         size_t bitmapEntry;
         size_t realSize;
         size_t realBase;
-        foreach (i; 0..memmap.entryCount) {
-            if (!memmap.entries[i].isFree) {
+        foreach (i; 0..memmap.length) {
+            if (!memmap[i].isFree) {
                 continue;
             }
-            if (memmap.entries[i].size >= bitmapSize) {
+            if (memmap[i].size >= bitmapSize) {
                 bitmapEntry = i;
-                bitmap      = cast(size_t*)(memmap.entries[i].base);
-                realSize    = memmap.entries[i].size - bitmapSize;
-                realBase    = memmap.entries[i].base + bitmapSize;
+                bitmap      = cast(size_t*)(memmap[i].base);
+                realSize    = memmap[i].size - bitmapSize;
+                realBase    = memmap[i].base + bitmapSize;
 
                 // Initialise entire bitmap to 1 (non-free)
                 auto a = cast(ubyte*)bitmap;
@@ -55,23 +56,23 @@ struct PhysicalAllocator {
         }
 
         // Third, populate free bitmap entries according to memory map.
-        foreach (i; 0..memmap.entryCount) {
-            if (memmap.entries[i].isFree) {
+        foreach (i; 0..memmap.length) {
+            if (memmap[i].isFree) {
                 size_t base;
                 size_t size;
                 if (i == bitmapEntry) {
                     size = realSize;
                     base = realBase;
                 } else {
-                    size = memmap.entries[i].size;
-                    base = memmap.entries[i].base;
+                    size = memmap[i].size;
+                    base = memmap[i].base;
                 }
                 for (ptrdiff_t j = 0; j < size; j += blockSize) {
                     bitreset(bitmap, (base + j) / blockSize);
                 }
             } else {
-                for (ptrdiff_t j = 0; j < memmap.entries[i].size; j += blockSize) {
-                    bitset(bitmap, (memmap.entries[i].base + j) / blockSize);
+                for (ptrdiff_t j = 0; j < memmap[i].size; j += blockSize) {
+                    bitset(bitmap, (memmap[i].base + j) / blockSize);
                 }
             }
         }

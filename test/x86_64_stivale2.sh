@@ -31,4 +31,4 @@ echfs-utils -m -p0 $IMAGE import $LIMINE_DIR/limine.sys limine.sys
 make -C $LIMINE_DIR
 $LIMINE_DIR/limine-install $IMAGE
 
-qemu-system-x86_64 -M q35 -m 1G -smp 4 -debugcon stdio -enable-kvm -cpu host -hda $IMAGE
+qemu-system-x86_64 -m 1G -smp 4 -debugcon stdio -enable-kvm -cpu host -hda $IMAGE
