@@ -1,7 +1,7 @@
 /// File abstration over the main storage driver.
 module storage.file;
 
-import storage.driver: PartitionInfo, FSType, StorageDriver;
+import storage.driver: Partition, FSType, StorageDriver;
 import memory.alloc:   allocate, free, resizeAllocation;
 debug import lib.debugtools: log, warn;
 
@@ -17,13 +17,13 @@ alias FileDescriptor = int; /// File descriptor datatype.
 
 // Information of the file.
 private struct File {
-    bool           isInUse;      // Whether the file is in use or vacant.
-    PartitionInfo* partition;    // Partition containing the file.
-    string         path;         // Path of the file inside the partition.
-    FileMode       mode;         // Mode of the file.
-    size_t         currLocation; // Current location in bytes.
-    ubyte*         fileData;     // Data of the file, allocated with `newArray`.
-    size_t         fileLength;   // Length in bytes of the allocated data.
+    bool       isInUse;      // Whether the file is in use or vacant.
+    Partition* partition;    // Partition containing the file.
+    string     path;         // Path of the file inside the partition.
+    FileMode   mode;         // Mode of the file.
+    size_t     currLocation; // Current location in bytes.
+    ubyte*     fileData;     // Data of the file, allocated with `newArray`.
+    size_t     fileLength;   // Length in bytes of the allocated data.
 }
 
 private __gshared size_t fileCount;

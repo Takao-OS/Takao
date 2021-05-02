@@ -1,7 +1,7 @@
 /// Driver for echfs filesystems.
 module storage.echfs;
 
-import storage.driver: PartitionInfo, FSType, StorageDriver;
+import storage.driver: Partition, FSType, StorageDriver;
 import memory.alloc:   allocate, free;
 import lib.string:     fromCString;
 import lib.math:       divRoundUp;
@@ -51,7 +51,7 @@ private immutable echfsFileType = 0; // Type of a directory entry which is a fil
 private immutable echfsDirType  = 1; // Ditto but dir.
 
 /// Probe echfs, and if found, return a partition info allocated with `newObj`.
-ECHFSInfo* probeECHFS(PartitionInfo* part) {
+ECHFSInfo* probeECHFS(Partition* part) {
     assert(part != null);
 
     // Read block 0, which is the identity table.
@@ -84,7 +84,7 @@ ECHFSInfo* probeECHFS(PartitionInfo* part) {
 ///     file       = Array allocated with `allocate` holding the read file.
 ///     fileLength = Length of the read data.
 /// Returns: true if success, false in failure.
-bool echfsReadFile(PartitionInfo* part, string path, out ubyte* file, out size_t fileLength) {
+bool echfsReadFile(Partition* part, string path, out ubyte* file, out size_t fileLength) {
     import lib.string: fromCString;
 
     assert(part != null && part.fsType == FSType.ECHFS);
@@ -154,13 +154,13 @@ bool echfsReadFile(PartitionInfo* part, string path, out ubyte* file, out size_t
 ///     file       = File contents to write.
 ///     fileLength = Length of the data to write.
 /// Returns: true if success, false in failure.
-bool echfsWriteFile(PartitionInfo* part, string path, ubyte* file, size_t fileLength) {
+bool echfsWriteFile(Partition* part, string path, ubyte* file, size_t fileLength) {
     assert(part != null && part.fsType == FSType.ECHFS);
     return false;
 }
 
 // Searches for an entry, returns true and the entry if found, false if not found.
-private bool searchEntry(PartitionInfo* part, string path, out ECHFSDirEntry entry) {
+private bool searchEntry(Partition* part, string path, out ECHFSDirEntry entry) {
     assert(part != null);
 
     char* searchPath     = cast(char*)path;

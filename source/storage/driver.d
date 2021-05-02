@@ -4,39 +4,36 @@ module storage.driver;
 import lib.list:       List;
 import kernelprotocol: KernelDevice;
 
-/// The storage subsystem is accessed requesting access and opening paths.
-/// The system storage architecture is based on a list of devices, like windows.
-
 /// Types of drive.
 enum DriveType {
     ATA
 }
 
-/// Types of fs.
+/// Types of FS.
 enum FSType {
     ECHFS,
     None
 }
 
 /// Data to identify a mount.
-struct DriveMount {
-    string    name;      /// Name of the drive.
-    DriveType type;      /// Type of the drive.
-    void*     driveData; /// Driver-specific data.
+struct Drive {
+    string    name;       /// Name of the drive.
+    DriveType type;       /// Type of the drive.
+    void*     driveData;  /// Driver-specific data.
 }
 
 /// Data to identify a partition.
-struct PartitionInfo {
-    size_t      partitionIndex;  /// Index of the partition.
-    size_t      driveOffset;     /// Raw offset on the drive.
-    DriveMount* containingDrive; /// Drive which contains the partition.
-    FSType      fsType;          /// Type of FS.
-    void*       fsInfo;          /// Information used internally by the FS.
+struct Partition {
+    size_t partitionIndex;  /// Index of the partition.
+    size_t driveOffset;     /// Raw offset on the drive.
+    Drive* containingDrive; /// Drive which contains the partition.
+    FSType fsType;          /// Type of FS.
+    void*  fsInfo;          /// Information used internally by the FS.
 }
 
 // Structure to cache drive contents.
 private struct BlockCache {
-    DriveMount* drive;  // Drive that owns the cache.
+    Drive*      drive;  // Drive that owns the cache.
     size_t      offset; // Offset of the cache block.
     ubyte[4096] cache;  // Actual cached data.
 }
@@ -44,39 +41,54 @@ private struct BlockCache {
 /// Main storage driver.
 struct StorageDriver {
     static:
-    private __gshared List!DriveMount    driveMounts;  // Mounted and identified drives.
-    private __gshared List!PartitionInfo partitions;   // Partitions identified and in use.
-    private __gshared List!BlockCache    cachedBlocks; // Cached blocks from drives.
+    private __gshared List!Drive      drives;     // Mounted and identified drives.
+    private __gshared List!Partition  partitions; // Partitions identified and in use.
+    private __gshared List!BlockCache driveCache; // Cached blocks from drives.
 
     /// Initialize the driver with devices.
     void initialize(const KernelDevice[] devs) {
-        import storage.ata: ataProbeAndAdd  = probeAndAdd, ATADrive;
+        driveCache = List!(BlockCache)(30);
+        drives     = List!(Drive)(3);
+        partitions = List!(Partition)(6);
+
+        foreach (ref drive; devs) {
+            addDrive(drive);
+        }
+    }
+
+    /// Add a drive with a kernel device.
+    /// Params:
+    ///     dev = Drive to try to add.
+    void addDrive(const ref KernelDevice dev) {
+        import storage.ata: probeATA;
         import lib.string:  buildString;
         debug import lib.debugtools: log;
-
-        void addDrive(DriveMount dr) {
-            auto i = driveMounts.push(dr);
-            auto p = scanPartitions(&driveMounts[i]);
+        probeATA(dev, (size_t index, void* drive) {
+            Drive dr;
+            dr.name      = buildString("ata", index);
+            dr.type      = DriveType.ATA;
+            dr.driveData = drive;
+            auto i = drives.push(dr);
+            auto p = scanPartitions(&drives[i]);
             foreach (j; 0..p.length) {
                 partitions.push(p[j]);
             }
-            debug log("storage: Added drive ", (&driveMounts[i]).name);
-        }
+            debug log("storage: Added drive ", (&drives[i]).name);
+        });
+    }
 
-        cachedBlocks = List!(BlockCache)(30);
-        driveMounts  = List!(DriveMount)(3);
-        partitions   = List!(PartitionInfo)(6);
-
-        // Probe ATA drives.
-        ATADrive* atadrive;
-        auto driveIndex = 0;
-        while ((atadrive = ataProbeAndAdd()) != null) {
-            DriveMount dr;
-            dr.name      = buildString("ata", driveIndex);
-            dr.type      = DriveType.ATA;
-            dr.driveData = atadrive;
-            addDrive(dr);
-            driveIndex++;
+    /// Remove drive.
+    /// Params:
+    ///     drive = Drive to remove, never null.
+    void removeDrive(Drive* drive) {
+        assert(drive != null);
+        foreach (i; 0..drives.length) {
+            if (drives.isPresent(i) && &drives[i] == drive) {
+                import memory.alloc: free;
+                free(cast(void*)drives[i].name);
+                drives.remove(i);
+                break;
+            }
         }
     }
 
@@ -84,11 +96,10 @@ struct StorageDriver {
     /// Params:
     ///     name = Name of the drive.
     /// Returns: Pointer to drive mount, or `null` if not found.
-    DriveMount* findDrive(string name) {
-        foreach (i; 0..driveMounts.length) {
-            auto item = &driveMounts[i];
-            if (item.name == name) {
-                return item;
+    Drive* findDrive(string name) {
+        foreach (i; 0..drives.length) {
+            if (drives.isPresent(i) && drives[i].name == name) {
+                return &drives[i];
             }
         }
 
@@ -100,7 +111,7 @@ struct StorageDriver {
     ///     name  = Name of the drive.
     ///     index = Index of the partition in the drive.
     /// Returns: Pointer to partition info, or `null` if not found.
-    PartitionInfo* findPartition(string name, size_t index) {
+    Partition* findPartition(string name, size_t index) {
         const auto drive = findDrive(name);
         if (drive == null) {
             return null;
@@ -116,14 +127,14 @@ struct StorageDriver {
         return null;
     }
 
-    private ubyte* readDrive4K(DriveMount* drive, size_t offset) {
+    private ubyte* readDrive4K(Drive* drive, size_t offset) {
         import storage.ata: ATADrive, atRead = read4k;
 
         assert(drive != null);
 
         // Check cache.
-        foreach (i; 0..cachedBlocks.length) {
-            auto item = &cachedBlocks[i];
+        foreach (i; 0..driveCache.length) {
+            auto item = &driveCache[i];
             if (item.drive == drive && item.offset == offset) {
                 return item.cache.ptr;
             }
@@ -142,8 +153,8 @@ struct StorageDriver {
         }
 
         // Add block to cache.
-        foreach (i; 0..cachedBlocks.length) {
-            auto item = &cachedBlocks[i];
+        foreach (i; 0..driveCache.length) {
+            auto item = &driveCache[i];
             if (item.drive == null) {
                 item.drive  = c.drive;
                 item.offset = c.offset;
@@ -152,19 +163,19 @@ struct StorageDriver {
             }
         }
 
-        const auto i = cachedBlocks.push(c);
-        return cachedBlocks[i].cache.ptr;
+        const auto i = driveCache.push(c);
+        return driveCache[i].cache.ptr;
     }
 
-    private bool writeDrive4K(DriveMount* drive, void* data, size_t offset) {
+    private bool writeDrive4K(Drive* drive, void* data, size_t offset) {
         import storage.ata: ATADrive, atWrite = write4k;
 
         assert(drive  != null);
         assert(data != null);
 
         // Flush dirty cache from the same drive.
-        for (size_t i = 0; i < cachedBlocks.length; i++) {
-            auto item = &cachedBlocks[i]; //cachedBlocks.pointerToIndex(i);
+        for (size_t i = 0; i < driveCache.length; i++) {
+            auto item = &driveCache[i]; //driveCache.pointerToIndex(i);
             if (item.drive == drive && item.offset == offset) {
                 item.drive = null;
                 break;
@@ -185,7 +196,7 @@ struct StorageDriver {
     ///     offset = Offset to read from.
     ///     count  = Count of bytes to read.
     /// Returns: true if success, false if failure.
-    bool readDrive(DriveMount* drive, void* output, size_t offset, size_t count) {
+    bool readDrive(Drive* drive, void* output, size_t offset, size_t count) {
         assert(drive  != null);
         assert(output != null);
 
@@ -213,7 +224,7 @@ struct StorageDriver {
     ///     offset = Offset to read from.
     ///     count  = Count of bytes to write.
     /// Returns: true if success, false if failure.
-    bool writeDrive(DriveMount* drive, void* data, size_t offset, size_t count) {
+    bool writeDrive(Drive* drive, void* data, size_t offset, size_t count) {
         assert(drive != null);
         assert(data  != null);
 
@@ -233,7 +244,7 @@ struct StorageDriver {
         }
     }
 
-    private List!(PartitionInfo) scanPartitions(DriveMount* mount) {
+    private List!(Partition) scanPartitions(Drive* mount) {
         import storage.echfs: probeECHFS;
         debug import lib.debugtools: warn;
 
@@ -250,7 +261,7 @@ struct StorageDriver {
         // TODO: Lol support GPT.
         // Cover yourself in oil.
 
-        auto ret = List!(PartitionInfo)(1);
+        auto ret = List!(Partition)(1);
         ubyte[2] hint = [0, 0];
         ubyte[2] def  = [0, 0]; // @suppress(dscanner.suspicious.unmodified)
         ubyte[2] mbSig = [0, 0]; // @suppress(dscanner.suspicious.unmodified)
@@ -268,7 +279,7 @@ struct StorageDriver {
                 continue;
             }
 
-            PartitionInfo part;
+            Partition part;
             part.partitionIndex  = index++;
             part.driveOffset     = entries[i].firstSector * 512;
             part.containingDrive = mount;

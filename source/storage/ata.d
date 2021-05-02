@@ -1,9 +1,10 @@
 /// Driver for ATA devices.
 module storage.ata;
 
+import arch.x86_64_stivale2.cpu: outb, outw, inb, inw;
 import lib.lock:                 Lock;
 import memory.alloc:             allocate, free;
-import arch.x86_64_stivale2.cpu: outb, outw, inb, inw;
+import kernelprotocol:           KernelDevice;
 
 /// Struct to represent an ATA drive once initialized.
 struct ATADrive {
@@ -26,18 +27,21 @@ struct ATADrive {
 
 private immutable ushort[] ataPorts = [0x1f0, 0x170];
 
-private __gshared size_t probeCurrentIndex;
+/// Probes and calls the callback for each found device.
+void probeATA(const ref KernelDevice dev, void function(size_t index, void*) callback) {
+    assert(callback != null);
 
-/// Probes and returns a found drive, or `null` if not found.
-ATADrive* probeAndAdd() {
-    ATADrive* drive = null;
-    foreach (i; probeCurrentIndex..ataPorts.length * 2) {
-        drive = initDrive(probeCurrentIndex++);
+    if (dev.driver != "ata-controller") {
+        return;
+    }
+
+    size_t index;
+    foreach (i; 0..ataPorts.length * 2) {
+        auto drive = initDrive(i);
         if (drive != null) {
-            break;
+            callback(index++, drive);
         }
     }
-    return drive;
 }
 
 private ATADrive* initDrive(size_t index) {
