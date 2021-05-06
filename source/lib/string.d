@@ -98,14 +98,17 @@ size_t buildStringInPlace(T...)(char* result, size_t limit, T args) {
 
     size_t currIndex = 0;
     foreach (item; args) {
-        const auto advance = addItem(result, item, currIndex, limit);
-        currIndex += advance;
+        currIndex += addItem(result, item, currIndex, limit);
         if (currIndex >= limit) {
             break;
         }
     }
 
     return currIndex;
+}
+
+private size_t addItem(char* result, bool item, size_t index, size_t limit) {
+    return addItem(result, item ? "true" : "false", index, limit);
 }
 
 private size_t addItem(char* result, char item, size_t index, size_t limit) {
@@ -171,18 +174,18 @@ private size_t addItem(char* result, ulong item, size_t index, size_t limit) {
 private size_t addItem(char* result, string item, size_t index, size_t limit) {
     assert(result != null);
 
-    if (item == null && index + 4 < limit) {
-        result[index]     = 'n';
-        result[index + 1] = 'u';
-        result[index + 2] = 'l';
-        result[index + 3] = 'l';
-        return 4;
-    } else if (index + item.length < limit) {
-        foreach (i; 0..item.length) {
-            result[index + i] = item[i];
-        }
-        return item.length;
+    if (item == null) {
+        return addItem(result, "null", index, limit);
     } else {
-        return 0;
+        size_t ret;
+        foreach (c; item) {
+            const a = addItem(result, c, index++, limit);
+            if (a == 0) {
+                break;
+            } else {
+                ret += a;
+            }
+        }
+        return ret;
     }
 }

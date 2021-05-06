@@ -1,29 +1,30 @@
 module lib.lock;
 
-import core.atomic;
+import core.atomic: cas, atomicStore;
 
-private immutable ubyte SPINLOCK_LOCKED   = 1;
-private immutable ubyte SPINLOCK_UNLOCKED = 0;
+private immutable ubyte spinlockLocked   = 1;
+private immutable ubyte spinlockUnlocked = 0;
 
+/// Spinlock.
 struct Lock {
-    private shared ubyte status = SPINLOCK_UNLOCKED;
+    private shared ubyte status = spinlockUnlocked;
 
+    /// Acquire the lock, and loop forever until locked.
     void acquire() {
         while (true) {
-            if (cas(&(this.status), SPINLOCK_UNLOCKED, SPINLOCK_LOCKED)) {
+            if (cas(&status, spinlockUnlocked, spinlockLocked)) {
                 return;
             }
-
-            // CPU optimisation (would put 'pause' but D doesnt support it).
-            asm { rep; nop; }
         }
     }
 
+    /// Acquire the lock, or return false if not locked.
     bool acquireOrFail() {
-        return cas(&(this.status), SPINLOCK_UNLOCKED, SPINLOCK_LOCKED);
+        return cas(&status, spinlockUnlocked, spinlockLocked);
     }
 
+    /// Release a lock unconditionally.
     void release() {
-        atomicStore(this.status, SPINLOCK_UNLOCKED);
+        atomicStore(status, spinlockUnlocked);
     }
 }

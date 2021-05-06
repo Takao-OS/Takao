@@ -55,44 +55,13 @@ debug {
         printLock.release();
     }
 
-    private void print(ubyte add) {
-        print(cast(size_t)add);
-    }
-
-    private void print(char c) {
-        debugPrintChar(c);
-    }
-
     private void print(string add) {
         foreach (c; add) {
             debugPrintChar(c);
         }
     }
 
-    private void print(void* addr) {
-        print(cast(size_t)addr);
-    }
-
-    private void print(size_t x) {
-        import lib.string: fromCString;
-
-        int i;
-        char[17] buf;
-
-        buf[16] = 0;
-
-        if (!x) {
-            print("0x0");
-            return;
-        }
-
-        for (i = 15; x; i--) {
-            buf[i] = CONVERSION_TABLE[x % 16];
-            x /= 16;
-        }
-
-        i++;
-        print("0x");
-        print(fromCString(&buf[i]));
+    private void print(char c) {
+        debugPrintChar(c);
     }
 }

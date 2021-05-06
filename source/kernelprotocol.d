@@ -52,7 +52,7 @@ struct KernelMemoryEntry {
 
     /// Print the struct contents to debug output.
     debug void debugPrint() const {
-        log("[", cast(void*)base, " + ", cast(void*)size, "] - ", cast(size_t)isFree);
+        log("[", cast(void*)base, " + ", cast(void*)size, "] - ", isFree ? "free" : "bad");
     }
 }
 

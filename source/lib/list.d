@@ -43,6 +43,17 @@ struct List(T) {
         return elementCount;
     }
 
+    /// Count of present items.
+    size_t count() {
+        size_t ret;
+        foreach (i; 0..elementCount) {
+            if (storage[i].isPresent) {
+                ret += 1;
+            }
+        }
+        return ret;
+    }
+
     /// Add an item to the list, it might be at the end or not.
     size_t push(T elem) {
         foreach (i; 0..elementCount) {
