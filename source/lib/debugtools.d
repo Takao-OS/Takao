@@ -51,7 +51,7 @@ debug {
         char[128] buffer;
         auto ret = buildStringInPlace(buffer.ptr, buffer.length, items);
         print(fromCString(buffer.ptr, ret));
-        print('\n');
+        print("\n");
         printLock.release();
     }
 
@@ -59,9 +59,5 @@ debug {
         foreach (c; add) {
             debugPrintChar(c);
         }
-    }
-
-    private void print(char c) {
-        debugPrintChar(c);
     }
 }

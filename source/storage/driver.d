@@ -83,7 +83,7 @@ struct StorageDriver {
     void removeDrive(Drive* drive) {
         assert(drive != null);
         foreach (i; 0..drives.length) {
-            if (drives.isPresent(i) && &drives[i] == drive) {
+            if (&drives[i] == drive) {
                 import memory.alloc: free;
                 free(cast(void*)drives[i].name);
                 drives.remove(i);
@@ -98,7 +98,7 @@ struct StorageDriver {
     /// Returns: Pointer to drive mount, or `null` if not found.
     Drive* findDrive(string name) {
         foreach (i; 0..drives.length) {
-            if (drives.isPresent(i) && drives[i].name == name) {
+            if (drives[i].name == name) {
                 return &drives[i];
             }
         }

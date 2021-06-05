@@ -120,7 +120,7 @@ struct WM {
     /// Returns: Window pointer or null if not found.
     Window* fetchWindow(long window) {
         assert(window != -1);
-        if (window >= windows.length || !windows.isPresent(window)) {
+        if (window >= windows.length) {
             return null;
         }
         return &windows[window];
@@ -145,9 +145,7 @@ struct WM {
 
         backBuffer.clear(wmBackground);
         foreach_reverse (i; 0..windows.length) {
-            if (windows.isPresent(i)) {
-                windows[i].draw(bold, curs, sans, backBuffer);
-            }
+            windows[i].draw(bold, curs, sans, backBuffer);
         }
         cursor.draw(backBuffer);
 
@@ -173,11 +171,8 @@ struct WM {
                     createWindow("New window");
                     break;
                 case 'd':
-                    foreach (i; 0..windows.length) {
-                        if (windows.isPresent(i)) {
-                            windows.remove(i);
-                            break;
-                        }
+                    if (windows.length > 0) {
+                        windows.remove(0);
                     }
                     break;
                 default:
@@ -194,11 +189,8 @@ struct WM {
 
         if (isLeftClick) {
             foreach (i; 0..windows.length) {
-                if (!windows.isPresent(i)) {
-                    continue;
-                }
                 if (windows[i].isInWindow(cursorX, cursorY)) {
-                    windows.swapIndexes(i, 0);
+                    windows.swap(i, 0);
                     windows[0].setFocused(true);
                     auto w = &windows[0]; 
                     if (w.isTitleBar(cursorX, cursorY)) {

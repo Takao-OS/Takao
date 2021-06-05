@@ -85,19 +85,19 @@ void initMADT() {
          madtPtr += *(madtPtr + 1)) {
         switch (*(madtPtr)) {
             case 0:
-                debug log("acpi/madt: Found local APIC #", madtLocalAPICs.count);
+                debug log("acpi/madt: Found local APIC #", madtLocalAPICs.length);
                 madtLocalAPICs.push(cast(MADTLAPIC*)madtPtr);
                 break;
             case 1:
-                debug log("acpi/madt: Found I/O APIC #", madtIOAPICs.count);
+                debug log("acpi/madt: Found I/O APIC #", madtIOAPICs.length);
                 madtIOAPICs.push(cast(MADTIOAPIC*)madtPtr);
                 break;
             case 2:
-                debug log("acpi/madt: Found ISO #", madtISOs.count);
+                debug log("acpi/madt: Found ISO #", madtISOs.length);
                 madtISOs.push(cast(MADTISO*)madtPtr);
                 break;
             case 4:
-                debug log("acpi/madt: Found NMI #", madtNMIs.count);
+                debug log("acpi/madt: Found NMI #", madtNMIs.length);
                 madtNMIs.push(cast(MADTNMI*)madtPtr);
                 break;
             default:
