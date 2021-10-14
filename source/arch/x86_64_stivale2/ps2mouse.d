@@ -46,7 +46,7 @@ private __gshared PS2MousePacket currentPacket;
 
 /// Handler to be called when a mouse movement is ready.
 extern (C) void mouseHandler() {
-    import display.wm:           WM;
+    import display.wm:           mouseEventWM;
     debug import lib.debugtools: warn;
 
     switch (mouseCycle) {
@@ -87,7 +87,7 @@ extern (C) void mouseHandler() {
             } else {
                 yVariation = currentPacket.yMovement;
             }
-            WM.mouseEvent(xVariation, -yVariation, isLeftClick, isRightClick);
+            mouseEventWM(xVariation, -yVariation, isLeftClick, isRightClick);
     }
 }
 

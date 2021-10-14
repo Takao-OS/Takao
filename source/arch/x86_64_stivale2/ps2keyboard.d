@@ -59,7 +59,7 @@ void initPS2Keyboard() {
 
 /// Handler to be called when a keypress is ready.
 extern (C) void keyboardHandler() {
-    import display.wm:               WM;
+    import display.wm:               keyboardEventWM;
     import arch.x86_64_stivale2.cpu: inb;
 
     const ubyte input = inb(0x60);
@@ -108,6 +108,6 @@ extern (C) void keyboardHandler() {
         }
 
         // Go to the WM.
-        WM.keyboardEvent(isAltActive, c);
+        keyboardEventWM(isAltActive, c);
     }
 }

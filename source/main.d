@@ -1,14 +1,13 @@
 /// Main function of the freestanding kernel, and its most immediate utilities.
 module main;
 
-import display.wm:      WM;
+import display.wm;
 import display.window:  Window, TextWidget;
 import lib.cmdline:     getCmdlineOption;
 import lib.panic:       panic;
 import lib.string:      buildStringInPlace, fromCString;
-import memory.physical: PhysicalAllocator;
 import memory.virtual:  VirtualSpace;
-import storage.driver:  StorageDriver;
+import storage.driver:  initStorage;
 import storage.file:    open, close, FileMode;
 import archinterface:   enableInterrupts, disableInterrupts, executeCore, killCore, getCoreCount, getCurrentCore;
 import kernelprotocol:  KernelProtocol;
@@ -38,11 +37,11 @@ void kernelMain(const ref KernelProtocol proto) {
     mainMappings.setActive();
 
     debug log("Starting WM");
-    WM.initialize(proto.fb);
-    WM.loadingScreen();
+    initWM(proto.fb);
+    loadingScreenWM();
 
     debug log("Starting storage subsystem");
-    StorageDriver.initialize(proto.devmap);
+    initStorage(proto.devmap);
 
     debug log("Fetch commandline options");
     string init;
@@ -68,18 +67,18 @@ void kernelMain(const ref KernelProtocol proto) {
         char[256] path;
         size_t    len;
         len = buildStringInPlace(path.ptr, path.length, root, boldFontPath); 
-        WM.loadBoldFont(fromCString(path.ptr, len));
+        loadWMBoldFont(fromCString(path.ptr, len));
         len = buildStringInPlace(path.ptr, path.length, root, cursiveFontPath);
-        WM.loadCursiveFont(fromCString(path.ptr, len));
+        loadWMCursiveFont(fromCString(path.ptr, len));
         len = buildStringInPlace(path.ptr, path.length, root, sansFontPath);
-        WM.loadSansFont(fromCString(path.ptr, len));
+        loadWMSansFont(fromCString(path.ptr, len));
     }
 
-    auto wh = WM.createWindow("Hello!");
+    auto wh = createWindow("Hello!");
     if (wh == -1) {
         panic("Could not create window");
     }
-    auto win = WM.fetchWindow(wh);
+    auto win = fetchWindow(wh);
     if (win == null) {
         panic("Could not fetch welcome window");
     }
@@ -93,7 +92,7 @@ void kernelMain(const ref KernelProtocol proto) {
 
     debug log("Starting refresh cycle");
     for (;;) {
-        WM.refresh();
+        refreshWM();
     }
 
     panic("End of kernel");

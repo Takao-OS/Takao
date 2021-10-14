@@ -105,13 +105,13 @@ private immutable pageSize         = 0x1000;
 private immutable pageTablePresent = 1 << 0;
 private immutable pageTableEntries = 512;
 
-import memory.physical: PhysicalAllocator;
+import memory.physical: allocatePhysicalAndZero, freePhysical;
 
 private size_t* findOrAllocPageTable(size_t* table, size_t index, size_t flags) {
     auto ret = findPageTable(table, index);
 
     if (ret == null) {
-        ret = cast(size_t*)PhysicalAllocator.allocAndZero(1);
+        ret = cast(size_t*)allocatePhysicalAndZero(1);
         if (ret == null) {
             return null;
         }
@@ -133,7 +133,7 @@ private size_t* findPageTable(size_t* table, size_t index) {
 private void cleanPageTable(size_t* table) {
     for (size_t i = 0;; i++) {
         if (i == pageTableEntries) {
-            PhysicalAllocator.free(cast(void*)table, 1);
+            freePhysical(cast(void*)table, 1);
         } else if (table[i] & pageTablePresent) {
             return;
         }
@@ -157,7 +157,7 @@ struct ArchMMU {
 
     /// Create a core specific MMU.
     this(out bool success) {
-        pml4    = cast(size_t*)(PhysicalAllocator.allocAndZero(1));
+        pml4    = cast(size_t*)(allocatePhysicalAndZero(1));
         success = pml4 == null ? false : true;
     }
 

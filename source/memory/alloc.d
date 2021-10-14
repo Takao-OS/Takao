@@ -1,6 +1,9 @@
+/// Final allocator of the kernel for general purpose allocations, when
+/// its not required for the memory to be physical, or have any weird
+/// conditions.
 module memory.alloc;
 
-import memory.physical: blockSize, PhysicalAllocator;
+import memory.physical: blockSize, allocatePhysicalAndZero, freePhysical;
 import lib.math:        divRoundUp;
 
 private struct ArrayAllocMetadata {
@@ -13,10 +16,16 @@ size_t getAllocationSize(void* ptr) {
     return meta.count;
 }
 
+/// Allocate memory space for the passed sizes.
+/// Params:
+///     count = Count of items to allocate for.
+/// Returns: Pointer to allocated space or null on failure.
 T* allocate(T = ubyte)(size_t count = 1) {
     auto pageCount = divRoundUp(T.sizeof * count, blockSize);
-    auto ptr = PhysicalAllocator.allocAndZero(pageCount + 1);
-    assert(ptr != null);
+    auto ptr = allocatePhysicalAndZero(pageCount + 1);
+    if (ptr == null) {
+        return null;
+    }
 
     auto meta = cast(ArrayAllocMetadata*)ptr;
     ptr += blockSize;
@@ -27,6 +36,11 @@ T* allocate(T = ubyte)(size_t count = 1) {
     return cast(T*)ptr;
 }
 
+/// Resize a pre-existing allocation using relative differences.
+/// Params:
+///     oldPtr = Pointer to reallocate, might be modified by the function.
+///     diff = Signed difference in the ammount of items allocated.
+/// Returns: 0 on success, other values for failure.
 int resizeAllocation(T)(T** oldPtr, long diff) {
     auto meta = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - blockSize);
 
@@ -41,6 +55,11 @@ int resizeAllocation(T)(T** oldPtr, long diff) {
     return resizeAllocationAbs(oldPtr, newCount);
 }
 
+/// Resize a pre-existing allocation using absolute differences.
+/// Params:
+///     oldPtr = Pointer to reallocate, might be modified by the function.
+///     newCount = Ammount of items allocated.
+/// Returns: 0 on success, other values for failure.
 int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
     auto pageCount = divRoundUp(T.sizeof * newCount, blockSize);
     auto meta      = cast(ArrayAllocMetadata*)((cast(void*)*oldPtr) - blockSize);
@@ -51,7 +70,7 @@ int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
     } else if (meta.pages > pageCount) {
         auto ptr = cast(void*)*oldPtr;
         ptr += (pageCount * blockSize);
-        PhysicalAllocator.free(ptr, meta.pages - pageCount);
+        freePhysical(ptr, meta.pages - pageCount);
         meta.pages = pageCount;
         meta.count = newCount;
         return 0;
@@ -67,8 +86,11 @@ int resizeAllocationAbs(T)(T** oldPtr, size_t newCount) {
     }
 }
 
+/// Free an allocation.
+/// Params:
+///     ptr = Pointer to free.
 void free(void *ptr) {
     auto meta = cast(ArrayAllocMetadata*)(ptr - blockSize);
     ptr -= blockSize;
-    PhysicalAllocator.free(ptr, meta.pages + 1);
+    freePhysical(ptr, meta.pages + 1);
 }
